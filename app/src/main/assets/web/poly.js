@@ -1,0 +1,1 @@
+window.androidObj = function AndroidAPI(){};
