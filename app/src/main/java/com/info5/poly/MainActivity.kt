@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun setRecording(recording: Boolean){
             this.isRecording = recording;
+            Log.d("Poly Debug", "recording: " + this.isRecording);
         }
     }
 
@@ -36,10 +37,11 @@ class MainActivity : AppCompatActivity() {
         }
         fun addMessage(user: Boolean){
             webView.evaluateJavascript("addMessage(${user};") { messageID ->
+
             }
         }
-        fun appendMessage(user: Boolean, id: Int, msg: String){
-            webView.evaluateJavascript("appendMessage(${user}, ${id}, '${escapeJS(msg)}';") {}
+        fun editMessage(user: Boolean, id: Int, msg: String){
+            webView.evaluateJavascript("editMessage(${user}, ${id}, '${escapeJS(msg)}';") {}
         }
 
         fun setLoading(loading: Boolean){
@@ -55,13 +57,14 @@ class MainActivity : AppCompatActivity() {
 
         val webView: WebView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
-        webView.loadUrl("file:///android_asset/poly.html");
+        webView.addJavascriptInterface(WebAndroidAPI(), JS_OBJ_NAME)
+        webView.loadUrl("file:///android_asset/web/poly.html");
+
         webView.webChromeClient = object: WebChromeClient() {
             override fun onConsoleMessage(message: String?, lineNumber: Int, sourceID: String?) {
-                Log.i("WebViewConsole", message!!)
+                Log.d("WebViewConsole", message!!)
             }
         }
 
-        webView.addJavascriptInterface(WebAndroidAPI(), JS_OBJ_NAME)
     }
 }
