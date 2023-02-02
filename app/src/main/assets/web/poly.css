@@ -67,3 +67,21 @@ footer{
 #speak-bubble:hover > .icon{
     transform: scale(1.2);
 }
+
+.question {
+  background-color: #7D4FFE;
+}
+.response {
+  background-color: #C49FFF;
+}
+
+.chat-bubble-text {
+  color: white;
+}
+
+.chat-bubble {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border-radius: 20px;
+    padding: 10px;
+}
