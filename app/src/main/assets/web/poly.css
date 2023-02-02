@@ -70,9 +70,15 @@ footer{
 
 .question {
   background-color: #7D4FFE;
+ /* position: absolute;
+  right: 10px;*/
+  align-self: flex-end;
+ 
+
 }
 .response {
   background-color: #C49FFF;
+
 }
 
 .chat-bubble-text {
@@ -84,4 +90,11 @@ footer{
     margin-bottom: 10px;
     border-radius: 20px;
     padding: 10px;
+    width:45%;
 }
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+  }
