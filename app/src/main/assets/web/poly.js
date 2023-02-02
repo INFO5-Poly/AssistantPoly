@@ -2,24 +2,19 @@ var recording = false;
 document.getElementById("speak-bubble").addEventListener("click", () => {
     recording = !recording;
     //AndroidAPI.setRecording(recording);
-    addQuestion("Hello???");
-    addResponse("Hello!!!");
+    addMessage(true, "Hello???");
+    addMessage(false, "Hello!!!");
 })
 
-function addQuestion(question){
-    const template = document.querySelector("template");
-    const clone = template.content.firstElementChild.cloneNode(true);
+function addMessage(isUser, msg){
+    var template;
+    if(isUser)
+        template = document.querySelector("template").content.querySelector(".user-message");
+    else 
+        template = document.querySelector("template").content.querySelector(".assistant-message");
+    const clone = template.cloneNode(true);
     const p =  clone.querySelectorAll("p");
-    p[0].innerHTML = question;
-    const main = document.querySelector("main");
-    main.appendChild(clone);
-}
-
-function addResponse(response){
-    const template = document.querySelector("template");
-    const clone = template.content.lastElementChild.cloneNode(true);
-    const p =  clone.querySelectorAll("p");
-    p[0].innerHTML = response;
+    p[0].innerHTML = msg;
     const main = document.querySelector("main");
     main.appendChild(clone);
 }
