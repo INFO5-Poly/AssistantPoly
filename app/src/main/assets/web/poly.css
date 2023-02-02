@@ -27,6 +27,10 @@ footer{
     line-height: 8vh;
 
 }
+main{
+    height: 86vh;
+    overflow-y: scroll;
+}
 .icon {
     display: inline-block;
     vertical-align: middle;
@@ -68,7 +72,7 @@ footer{
     transform: scale(1.2);
 }
 
-.question {
+.user-message {
   background-color: #7D4FFE;
  /* position: absolute;
   right: 10px;*/
@@ -76,7 +80,7 @@ footer{
  
 
 }
-.response {
+.assistant-message {
   background-color: #C49FFF;
 
 }
