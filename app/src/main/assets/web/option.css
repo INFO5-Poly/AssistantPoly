@@ -1,0 +1,68 @@
+body{
+    background-color: #101015;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    margin: 0;
+    padding: 0;  
+}
+
+header{
+    height: 6vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    background-color: #252530;
+    align-items: center;
+    padding: 1vh;
+    line-height: 6vh;
+}
+
+.icon {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: normal;
+    font-size:6vh;
+    margin-bottom: 2px;
+    background-color: #7025c5;
+    color: white;
+    width: 6vh;
+    height: 6vh;
+    transform: scale(1.2);
+    text-align: center;
+}
+
+.saveButton {
+    position:absolute;
+    bottom: 4vh;
+    left: auto;
+    right: 4vh;
+    font-size: 2vh;
+    background-color: #7025c5;
+    color: white;
+    border-radius: 100%;
+    width: 12vh;
+    height: 12vh;
+    text-align: center;
+    cursor: pointer;
+}
+main {
+    margin:auto;
+}
+
+.select {
+    text-align: center;
+    font-size: 6vh;
+    color :white;
+}
+
+select {
+    height: 10vh;
+    width: 30vw;
+    font-size: 5vh;
+}
+
+.arrow-back {
+    cursor: pointer;
+}

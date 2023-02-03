@@ -64,6 +64,10 @@ function AdujstSpeakingBar() {
     })
 }
 
+settingButton = document.getElementById("settings-button");
+settingButton.addEventListener('click', () =>{
+    window.open("./option.html");
+})
 
 
 
