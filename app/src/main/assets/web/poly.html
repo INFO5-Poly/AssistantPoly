@@ -9,7 +9,8 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
     <link rel="stylesheet" href="icons.css" />
     <link rel="stylesheet" href="poly.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css">
+
 </head>
 
 <body>
@@ -35,22 +36,25 @@
             <span class="icon material-symbols-rounded" id="speak-icon">mic</span>
         </div>
     </footer>
-    <div class="modal" id ="modal">
-        <div class="modal-background"></div>
-        <div class="modal-card">
-            <header class="modal-card-head">
-                <p class="modal-card-title">Options</p>
-                <button class="delete" aria-label="close"></button>
-            </header>
-            <section class="modal-card-body">
-                <!-- Content ... -->
-            </section>
-            <footer class="modal-card-foot">
-                <button class="button is-success">Save changes</button>
-                <button class="button">Cancel</button>
-            </footer>
-        </div>
+    <button class="button is-primary" id="open-modal-btn">Open Modal</button>
+
+    <div class="modal" id="modal">
+      <div class="modal-background"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Modal Title</p>
+          <button class="delete" id="close-modal-btn"></button>
+        </header>
+        <section class="modal-card-body">
+          <!-- Modal content goes here -->
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-success" id="save-modal-btn">Save changes</button>
+          <button class="button" id="cancel-modal-btn">Cancel</button>
+        </footer>
+      </div>
     </div>
+    
 </body>
 
 <template>
