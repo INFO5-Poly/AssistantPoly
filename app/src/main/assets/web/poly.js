@@ -1,5 +1,6 @@
+
 var recording = false;
- 
+
 document.getElementById("speak-bubble").addEventListener("click", () => {
 
     //AndroidAPI.setRecording(recording);
@@ -9,7 +10,7 @@ document.getElementById("speak-bubble").addEventListener("click", () => {
     else {
         startRecording();
     }
-    addMessage(true, "Hello???");
+    addMessage(true, "Hello??????????????????????????????????????????????????????");
     addMessage(false, "Hello!!!");
 })
 
@@ -34,7 +35,7 @@ function startRecording() {
     document.getElementsByTagName("footer")[0].style.height = "30vh";
     document.getElementById("speak-icon").innerHTML = "send";
 
-    AdujstSpeakingBar();
+    //AdujstSpeakingBar();
 
 
 }
@@ -63,24 +64,5 @@ function AdujstSpeakingBar() {
         speakingBar.style.width = `${confidence * 100}%`;
     })
 }
-
-/*settingButton = document.getElementById("settings-button");
-settingButton.addEventListener('click', () =>{
-    window.open("./option.html");
-})
-*/
-const openModalBtn = document.querySelector('#open-modal-btn');
-const closeModalBtn = document.querySelector('#close-modal-btn');
-const modal = document.querySelector('#modal');
-
-openModalBtn.addEventListener('click', () => {
-  modal.classList.add('is-active');
-});
-
-closeModalBtn.addEventListener('click', () => {
-  modal.classList.remove('is-active');
-});
-
-
 
 
