@@ -1,5 +1,14 @@
 
 var recording = false;
+const feelings = {
+    satisfied :"sentiment_satisfied",
+    dissatisfied:"sentiment_dissatisfied",
+    neutral:"sentiment_neutral"
+}
+var user_feeling =feelings.neutral;
+
+//variable pour tester l'avatar
+var feeling_count=1;
 
 document.getElementById("speak-bubble").addEventListener("click", () => {
 
@@ -12,6 +21,13 @@ document.getElementById("speak-bubble").addEventListener("click", () => {
     }
     addMessage(true, "Hello??????????????????????????????????????????????????????");
     addMessage(false, "Hello!!!");
+    feeling_count=feeling_count%3;
+    switch(feeling_count){
+        case 1 : changeUserFeeling("happy");break;
+        case 2 : changeUserFeeling("sad");break;
+        case 0 : changeUserFeeling("neutral");break;
+    }
+    feeling_count++;
 })
 
 function addMessage(isUser, msg) {
@@ -63,6 +79,22 @@ function AdujstSpeakingBar() {
         const speakingBar = document.getElementById("speaking-bar");
         speakingBar.style.width = `${confidence * 100}%`;
     })
+}
+
+
+//feeling : l'entree que chatGPT va nous donner 
+function changeUserFeeling(feeling){
+    //adapter le switch selon le type de l'entree que chatGPT va nous rendre
+    
+    switch(feeling){
+        case "happy": user_feeling=feelings.satisfied;break;
+        case "sad": user_feeling=feelings.dissatisfied;break;
+        case "neutral": user_feeling=feelings.neutral;break;
+    }
+
+    document.getElementById("feeling_icon").innerHTML=user_feeling;
+
+
 }
 
 
