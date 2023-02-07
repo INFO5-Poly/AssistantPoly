@@ -61,10 +61,12 @@
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
                             Choose a theme
+                            <span class="theme"></span>
                         </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Theme 1</a></li>
-                            <li><a class="dropdown-item" href="#">Theme 2</a></li>
+
+                        <ul class="dropdown-menu" id ="dropdownTheme">
+                            <li><a class="dropdown-item" href="#" ref="">Dark mode</a></li>
+                            <li><a class="dropdown-item" href="#">Light mode</a></li>
                         </ul>
                     </div>
                 </div>
@@ -75,8 +77,11 @@
             </div>
         </div>
     </div>
-    
+  
 </body>
+
+<script src="poly.js"></script>
+ 
 
 <template>
     <div class="chat-bubble user-message">
@@ -89,6 +94,5 @@
 
 </template>
 
-<script src="poly.js"></script>
 
 </html>

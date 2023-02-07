@@ -1,14 +1,16 @@
 
 var recording = false;
 const feelings = {
-    satisfied :"sentiment_satisfied",
-    dissatisfied:"sentiment_dissatisfied",
-    neutral:"sentiment_neutral"
+    satisfied: "sentiment_satisfied",
+    dissatisfied: "sentiment_dissatisfied",
+    neutral: "sentiment_neutral"
 }
-var user_feeling =feelings.neutral;
+var user_feeling = feelings.neutral;
 
 //variable pour tester l'avatar
-var feeling_count=1;
+var feeling_count = 1;
+var user_theme;
+
 
 document.getElementById("speak-bubble").addEventListener("click", () => {
 
@@ -21,11 +23,11 @@ document.getElementById("speak-bubble").addEventListener("click", () => {
     }
     addMessage(true, "Hello??????????????????????????????????????????????????????");
     addMessage(false, "Hello!!!");
-    feeling_count=feeling_count%3;
-    switch(feeling_count){
-        case 1 : changeUserFeeling("happy");break;
-        case 2 : changeUserFeeling("sad");break;
-        case 0 : changeUserFeeling("neutral");break;
+    feeling_count = feeling_count % 3;
+    switch (feeling_count) {
+        case 1: changeUserFeeling("happy"); break;
+        case 2: changeUserFeeling("sad"); break;
+        case 0: changeUserFeeling("neutral"); break;
     }
     feeling_count++;
 })
@@ -83,18 +85,70 @@ function AdujstSpeakingBar() {
 
 
 //feeling : l'entree que chatGPT va nous donner 
-function changeUserFeeling(feeling){
+function changeUserFeeling(feeling) {
     //adapter le switch selon le type de l'entree que chatGPT va nous rendre
-    
-    switch(feeling){
-        case "happy": user_feeling=feelings.satisfied;break;
-        case "sad": user_feeling=feelings.dissatisfied;break;
-        case "neutral": user_feeling=feelings.neutral;break;
+
+    switch (feeling) {
+        case "happy": user_feeling = feelings.satisfied; break;
+        case "sad": user_feeling = feelings.dissatisfied; break;
+        case "neutral": user_feeling = feelings.neutral; break;
     }
 
-    document.getElementById("feeling_icon").innerHTML=user_feeling;
+    document.getElementById("feeling_icon").innerHTML = user_feeling;
 
 
 }
+$(".dropdown-menu li a").click(function () {
+    var selText = $(this).text();
+    $(this).parents('.dropdown').find('.dropdown-toggle').html(selText + ' <span class="theme"></span>');
+    user_theme = selText;
+});
+
+
+document.getElementById("save-button").addEventListener("click", () => {
+
+    // document.body.style.backgroundColor=user_theme;
+    switch (user_theme) {
+        case "Dark mode":
+            if (!document.body.classList.contains("dark-mode")) {
+                document.body.classList.toggle("dark-mode");
+                var elements =document.querySelectorAll(".chat-bubble-text");
+                for (var i = 0; i < elements.length; i++) {
+                    var element = elements[i];
+                    element.classList.add("dark-mode");
+                }
+                var elements = document.querySelector("template").content.querySelectorAll(".chat-bubble-text");
+                for (var i = 0; i < elements.length; i++) {
+                    var element = elements[i];
+                    element.classList.add("dark-mode");
+                }
+            }
+            break;
+        case "Light mode":
+            if (document.body.classList.contains("dark-mode")) {
+                document.body.classList.toggle("dark-mode");
+                var elements =document.querySelectorAll(".chat-bubble-text");
+                for (var i = 0; i < elements.length; i++) {
+                    var element = elements[i];
+                    element.classList.remove("dark-mode");
+                }
+                var elements = document.querySelector("template").content.querySelectorAll(".chat-bubble-text");
+                for (var i = 0; i < elements.length; i++) {
+                    var element = elements[i];
+                    element.classList.remove("dark-mode");
+                }
+            }
+            break;
+    }
+
+
+
+
+
+
+
+
+})
+
 
 

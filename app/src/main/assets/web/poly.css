@@ -1,5 +1,5 @@
 body {
-    background-color: #101015 !important;
+    background-color: #f1f1f1 !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -7,6 +7,15 @@ body {
     margin: 0;
     padding: 0;
 }
+
+
+  
+  body.dark-mode {
+    background-color: #101015 !important;
+  }
+
+  
+  
 
 header {
     height: 6vh;
@@ -77,11 +86,7 @@ main {
 
 .user-message {
     background-color: #7D4FFE;
-    /* position: absolute;
-  right: 10px;*/
     align-self: flex-end;
-
-
 }
 
 .assistant-message {
@@ -91,8 +96,15 @@ main {
 
 .chat-bubble-text {
     margin : auto !important;
+    color: black;
+}
+
+.chat-bubble-text.dark-mode {
     color: white;
 }
+
+
+
 
 .chat-bubble {
     margin-top: 10px;
