@@ -45,8 +45,8 @@ class MainActivity : AppCompatActivity() {
             //================
         }
         @JavascriptInterface
-        fun openApplication(name: String) {
-            val callIntent: Intent = Uri.parse(name).let { number ->
+        fun phoneCall(phoneNumber: String) {
+            val callIntent: Intent = Uri.parse(phoneNumber).let { number ->
                 Intent(Intent.ACTION_CALL, number)
             }
             if (ContextCompat.checkSelfPermission(applicationContext,android.Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
