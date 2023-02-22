@@ -1,12 +1,19 @@
 package com.info5.poly
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.android.material.internal.ContextUtils.getActivity
 import com.info5.poly.databinding.ActivityMainBinding
 
 
@@ -36,6 +43,25 @@ class MainActivity : AppCompatActivity() {
                 Log.d("PythonOutput", it)
             }
             //================
+        }
+        @JavascriptInterface
+        fun openApplication(name: String) {
+            val callIntent: Intent = Uri.parse(name).let { number ->
+                Intent(Intent.ACTION_CALL, number)
+            }
+            if (ContextCompat.checkSelfPermission(applicationContext,android.Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                val requestCode = 1
+                ActivityCompat.requestPermissions(
+                    this@MainActivity, arrayOf(android.Manifest.permission.CALL_PHONE),
+                    requestCode
+                )
+            } else {
+                try {
+                    startActivity(callIntent)
+                } catch (e: ActivityNotFoundException) {
+                    // Define what your app should do if no activity can handle the intent.
+                }
+            }
         }
     }
 
@@ -78,4 +104,6 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
+
 }
