@@ -15,22 +15,24 @@ var user_theme;
 document.getElementById("speak-bubble").addEventListener("click", () => {
 
     //AndroidAPI.setRecording(recording);
-   /* if (recording) {
+
+   if (recording) {
         stopRecording();
     }
     else {
         startRecording();
     }
-    addMessage(true, "Hello??????????????????????????????????????????????????????");
-    addMessage(false, "Hello!!!");
+
     feeling_count = feeling_count % 3;
     switch (feeling_count) {
         case 1: changeUserFeeling("happy"); break;
         case 2: changeUserFeeling("sad"); break;
         case 0: changeUserFeeling("neutral"); break;
     }
-    feeling_count++;*/
-    AndroidAPI.phoneCall("tel:0767642068");
+    feeling_count++;
+
+    //AndroidAPI.phoneCall("tel:0767642068");
+    //AndroidAPI.handlePermissions();
 })
 
 function addMessage(isUser, msg) {
@@ -54,6 +56,10 @@ function startRecording() {
     document.getElementsByTagName("footer")[0].style.height = "30vh";
     document.getElementById("speak-icon").innerHTML = "send";
 
+    //Audio recording
+    recognizedText = AndroidAPI.speechToText();
+    addMessage(true, recognizedText);
+
     //AdujstSpeakingBar();
 
 
@@ -65,6 +71,8 @@ function stopRecording() {
     speakingBar.style.width = "0%";
     document.getElementsByTagName("footer")[0].style.height = "8vh";
     document.getElementById("speak-icon").innerHTML = "mic";
+
+    addMessage(false, "Réponse de Poly Assistant");
 
 }
 
