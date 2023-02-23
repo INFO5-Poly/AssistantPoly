@@ -15,7 +15,7 @@ var user_theme;
 document.getElementById("speak-bubble").addEventListener("click", () => {
 
     //AndroidAPI.setRecording(recording);
-    if (recording) {
+   /* if (recording) {
         stopRecording();
     }
     else {
@@ -29,7 +29,8 @@ document.getElementById("speak-bubble").addEventListener("click", () => {
         case 2: changeUserFeeling("sad"); break;
         case 0: changeUserFeeling("neutral"); break;
     }
-    feeling_count++;
+    feeling_count++;*/
+    AndroidAPI.phoneCall("tel:0767642068");
 })
 
 function addMessage(isUser, msg) {
