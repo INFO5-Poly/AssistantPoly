@@ -1,12 +1,14 @@
 package com.info5.poly
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.telephony.SmsManager
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -89,7 +91,14 @@ class MainActivity : AppCompatActivity() {
             return Build.VERSION.RELEASE;
         }
 
-
+        @JavascriptInterface
+        fun sendSMS(phoneNumber:String, message:String){
+            val uri = Uri.parse("smsto:".plus(phoneNumber))
+            val intent = Intent(Intent.ACTION_SENDTO, uri)
+            startActivity(intent)
+            val smsManager: SmsManager = SmsManager.getDefault()
+            smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+        }
     }
 
 
