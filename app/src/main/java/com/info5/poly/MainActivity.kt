@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.webkit.JavascriptInterface
@@ -13,7 +14,6 @@ import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.material.internal.ContextUtils.getActivity
 import com.info5.poly.databinding.ActivityMainBinding
 
 
@@ -63,7 +63,42 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        @JavascriptInterface
+        fun openApplication(appName:String){
+
+
+                try {
+                    val i: Intent? =packageManager.getLaunchIntentForPackage  (appName);
+                    if (i!=null) {
+                        applicationContext.startActivity(i);
+                    }
+                } catch (e: PackageManager.NameNotFoundException) {
+                    // TODO Auto-generated catch block
+                }
+
+
+        }
+        @JavascriptInterface
+        fun getMobileBrand(): String {
+            val  manufacturer = Build.MANUFACTURER;
+            val model = Build.MODEL;
+            print(manufacturer.plus(model));
+            return manufacturer.plus(model); }
+        @JavascriptInterface
+        fun getAndroidVersion() : String? {
+            return Build.VERSION.RELEASE;
+        }
+
+
     }
+
+
+
+
+
+
+
+
 
     private inner class WebAPI(private val webView: WebView) {
         private fun escapeJS(str: String): String{
