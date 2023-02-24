@@ -1,7 +1,8 @@
 var recording = false;
+
 document.getElementById("speak-bubble").addEventListener("click", () => {
     recording = !recording;
-    //AndroidAPI.setRecording(recording);
+    AndroidAPI.setRecording(recording);
     addMessage(true, "Hello???");
     addMessage(false, "Hello!!!");
 })

@@ -16,7 +16,7 @@ def _async_raise(tid, exctype):
 def stop_thread(thread):
     _async_raise(thread.ident, SystemExit)
     
-def text_thread_run(code):
+def run_code(code):
     try:
         env={}
         exec(code, env, env)
@@ -24,9 +24,9 @@ def text_thread_run(code):
         print(e)
     
 #   This is the code to run Text functions...
-def mainTextCode(code):
+def run_code_thread(code):
     global thread1
-    thread1 = threading.Thread(target=text_thread_run, args=(code,),daemon=True)
+    thread1 = threading.Thread(target=run_code, args=(code,),daemon=True)
     thread1.start()
     # Define the
     timeout = 5 # change timeout settings in seconds here...

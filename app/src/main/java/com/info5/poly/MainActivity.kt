@@ -13,7 +13,7 @@ import com.info5.poly.databinding.ActivityMainBinding
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     val JS_OBJ_NAME = "AndroidAPI"
-    private lateinit var python: PythonExecutor
+    private lateinit var api: WebAPI
 
     private inner class WebAndroidAPI {
         private var isRecording: Boolean = false
@@ -24,17 +24,6 @@ class MainActivity : AppCompatActivity() {
             Log.d("Poly Debug", "recording: " + this.isRecording)
 
 
-            // TEST =========
-            var code = "def fibonacci_of(n):\n"
-            code += "   if n in {0, 1}:  # Base case\n"
-            code += "       return n\n"
-            code += "   return n\n"
-            code += "\n"
-            code += "print([fibonacci_of(n) for n in range(10)])\n"
-
-            python.fromString(code){
-                Log.d("PythonOutput", it)
-            }
             //================
         }
     }
@@ -62,13 +51,14 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        python = PythonExecutor(applicationContext)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         val webView: WebView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
         webView.addJavascriptInterface(WebAndroidAPI(), JS_OBJ_NAME)
+        api = WebAPI(webView)
         webView.loadUrl("file:///android_asset/web/poly.html")
 
         webView.webChromeClient = object: WebChromeClient() {
