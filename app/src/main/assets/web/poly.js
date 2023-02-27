@@ -57,12 +57,11 @@ function startRecording() {
     document.getElementById("speak-icon").innerHTML = "send";
 
     //Audio recording
-    recognizedText = AndroidAPI.speechToText();
+    AndroidAPI.onRecognizeSpeech()
+    recognizedText = AndroidAPI.getMessage();
     addMessage(true, recognizedText);
 
     //AdujstSpeakingBar();
-
-
 }
 
 function stopRecording() {
@@ -72,7 +71,7 @@ function stopRecording() {
     document.getElementsByTagName("footer")[0].style.height = "8vh";
     document.getElementById("speak-icon").innerHTML = "mic";
 
-    addMessage(false, "Réponse de Poly Assistant");
+    addMessage(false, "Réponse de Poly");
 
 }
 

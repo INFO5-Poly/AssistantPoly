@@ -11,11 +11,15 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.text.Editable
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -25,6 +29,8 @@ import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
+    private val REQUEST_SPEECH_TO_TEXT = 1
+    private var speechMessage : String = "Message par défaut"
     private lateinit var binding: ActivityMainBinding
     val JS_OBJ_NAME = "AndroidAPI"
     private lateinit var python: PythonExecutor
@@ -98,54 +104,44 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Enable speech recognition activity
         @JavascriptInterface
-        fun speechToText() : String {
-            // Permissions for audio recording
-            if (ContextCompat.checkSelfPermission
-                    (applicationContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-            {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                    val recordAudioRequestCode = 1
-                    ActivityCompat.requestPermissions(
-                        this@MainActivity, arrayOf(Manifest.permission.RECORD_AUDIO),
-                        recordAudioRequestCode
-                    )
+        fun onRecognizeSpeech() {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say Something...")
+
+            if (intent.resolveActivity(packageManager) != null) {
+                try {
+                    startActivityForResult(intent, REQUEST_SPEECH_TO_TEXT)
+                }
+                catch (exp : ActivityNotFoundException) {
+                    Toast.makeText(applicationContext, "Device not supported", Toast.LENGTH_SHORT).show()
                 }
             }
+            else {
+                Toast.makeText(applicationContext,
+                    "There is no app to handle the voice recognition",
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
 
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(applicationContext)
-            var recognizedText : String = "Texte par défaut..."
-            val speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        // Getting a message from the user's speech
+        @JavascriptInterface
+        fun getMessage () : String {
+            return speechMessage
+        }
+    }
 
-            // Recognition listener
-            speechRecognizer!!.setRecognitionListener(object : RecognitionListener {
-                override fun onReadyForSpeech(p0: Bundle?) {}
 
-                override fun onBeginningOfSpeech() {}
-
-                override fun onRmsChanged(p0: Float) {}
-
-                override fun onBufferReceived(p0: ByteArray?) {}
-
-                override fun onEndOfSpeech() {}
-
-                override fun onError(p0: Int) {}
-
-                override fun onResults(bundle: Bundle?) {
-                    val data = bundle!!.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    recognizedText = data!![0]
-                }
-
-                override fun onPartialResults(p0: Bundle?) {}
-
-                override fun onEvent(p0: Int, p1: Bundle?) {}
-            })
-
-            speechRecognizer!!.startListening(speechRecognizerIntent)
-
-            return recognizedText
+    // Handle the result of activities
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_SPEECH_TO_TEXT && resultCode == RESULT_OK) {
+            //speechMessage = data!!.data
+            val response = data!!.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            speechMessage = response!![0]
         }
     }
 
@@ -169,12 +165,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         python = PythonExecutor(applicationContext)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Permissions for audio recording
+        if (ContextCompat.checkSelfPermission
+                (applicationContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+        {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                val recordAudioRequestCode = 1
+                ActivityCompat.requestPermissions(
+                    this@MainActivity, arrayOf(Manifest.permission.RECORD_AUDIO),
+                    recordAudioRequestCode
+                )
+            }
+        }
 
         val webView: WebView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
