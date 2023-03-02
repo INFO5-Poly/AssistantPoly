@@ -4,7 +4,7 @@ import threading
 import time
 from queue import Queue
 import revChatGPT.V1 as gpt
-
+import json
 
 
 class GPT_Thread(threading.Thread):
@@ -18,6 +18,7 @@ class GPT_Thread(threading.Thread):
         self.bot = None
         self.msg = ""
         self.count = 0
+        self.conv_id = None
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -27,7 +28,7 @@ class GPT_Thread(threading.Thread):
 
     def _startup(self) -> None:
         with open('config.json', 'r') as file:
-            self.config = file.read()
+            self.config = json.loads(file.read())
         
         self.bot = gpt.Chatbot(self.config)
 
@@ -40,10 +41,9 @@ class GPT_Thread(threading.Thread):
         self.request_event.wait()
         print("handle wait over")
         self.request_event.clear()
-        for r in self.bot.ask(self.request_data):
-            if r == None:
-                break;
+        for r in self.bot.ask(self.request_data, conversation_id = self.conv_id):
             self.msg = r["message"]
+            self.conv_id = r["conversation_id"]
             self.count += 1
             print(self.count, flush=True)
             
@@ -63,6 +63,10 @@ class GPT_Thread(threading.Thread):
         print("get response")
         return str(self.count) + " : " + self.msg
 
+    def reset_conversation(self):
+        self.bot.reset_chat()
+        self.conv_id = None
+    
     def run(self) -> None:
         self._startup()
         while not self._stopped():
