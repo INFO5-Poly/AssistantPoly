@@ -50,8 +50,7 @@ main {
     margin-bottom: 2px;
 }
 
-#avatar {
-    background-color: #7025c5;
+#refresh {
     color: white;
     border-radius: 100%;
     width: 6vh;
@@ -61,7 +60,6 @@ main {
 
 #options-button, #save-button {
     text-align: center;
-    background-color: #7025c5;
     color:white;
 }
 
@@ -112,8 +110,9 @@ main {
     border-radius: 20px;
     padding: 10px;
     height: auto;
-    width: 45%;
+    width: 65vw;
     display: block;
+    word-wrap: normal;
 }
 
 .chat-container {
