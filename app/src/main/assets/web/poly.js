@@ -31,11 +31,7 @@ document.getElementById("speak-bubble").addEventListener("click", () => {
     }
     feeling_count++;*/
    // AndroidAPI.phoneCall("tel:0767642068");
-    //AndroidAPI.openApplication("com.google.android.apps.docs");
-    var mobileBrand = AndroidAPI.getMobileBrand();
-    console.log(mobileBrand);
-    var AndroidVersion = AndroidAPI.getAndroidVersion();
-        console.log(AndroidVersion);
+    AndroidAPI.openApplication("taptap");
 })
 
 function addMessage(isUser, msg) {

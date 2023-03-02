@@ -68,9 +68,12 @@ class MainActivity : AppCompatActivity() {
 
 
                 try {
-                    val i: Intent? =packageManager.getLaunchIntentForPackage  (appName);
-                    if (i!=null) {
-                        applicationContext.startActivity(i);
+                    if(getPackageFromAppName(appName) != "") {
+                        val packageName  = getPackageFromAppName(appName)
+                        val i: Intent? = packageManager.getLaunchIntentForPackage(packageName)
+                        if (i != null) {
+                            applicationContext.startActivity(i);
+                        }
                     }
                 } catch (e: PackageManager.NameNotFoundException) {
                     // TODO Auto-generated catch block
@@ -78,17 +81,17 @@ class MainActivity : AppCompatActivity() {
 
 
         }
-        @JavascriptInterface
-        fun getMobileBrand(): String {
-            val  manufacturer = Build.MANUFACTURER;
-            val model = Build.MODEL;
-            print(manufacturer.plus(model));
-            return manufacturer.plus(model); }
-        @JavascriptInterface
-        fun getAndroidVersion() : String? {
-            return Build.VERSION.RELEASE;
+        fun getPackageFromAppName(appName: String): String {
+            val intent = Intent(Intent.ACTION_MAIN, null)
+            intent.addCategory(Intent.CATEGORY_LAUNCHER)
+            val allApps = packageManager.queryIntentActivities(intent, 0)
+            for (resolveInfo in allApps) {
+                if (resolveInfo.activityInfo.applicationInfo.loadLabel(packageManager).toString() == appName) {
+                    return resolveInfo.activityInfo.packageName
+                }
+            }
+            return ""
         }
-
 
     }
 
