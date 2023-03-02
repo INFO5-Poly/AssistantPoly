@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.info5.poly.databinding.ActivityMainBinding
 
 
+
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     val JS_OBJ_NAME = "AndroidAPI"
@@ -86,7 +87,9 @@ class MainActivity : AppCompatActivity() {
             intent.addCategory(Intent.CATEGORY_LAUNCHER)
             val allApps = packageManager.queryIntentActivities(intent, 0)
             for (resolveInfo in allApps) {
-                if (resolveInfo.activityInfo.applicationInfo.loadLabel(packageManager).toString() == appName) {
+                val label =
+                    resolveInfo.activityInfo.applicationInfo.loadLabel(packageManager).toString()
+                if (label.contains(appName, ignoreCase = true) || appName.contains(label, ignoreCase = true)) {
                     return resolveInfo.activityInfo.packageName
                 }
             }
