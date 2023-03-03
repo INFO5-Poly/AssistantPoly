@@ -96,6 +96,14 @@ class MainActivity : AppCompatActivity() {
             return ""
         }
 
+        @JavascriptInterface
+        fun openYoutubeVideo (searchQuery :String){
+            val uri = Uri.parse("https://www.youtube.com/results?search_query=$searchQuery")
+            val intent = Intent(Intent.ACTION_VIEW,uri)
+            intent.setPackage(getPackageFromAppName("youtube"))
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            startActivity(intent)
+        }
     }
 
 
