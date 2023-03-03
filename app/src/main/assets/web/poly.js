@@ -7,7 +7,6 @@ var lastMessage = null;
 
 document.getElementById("speak-bubble").addEventListener("click", () => {
     AndroidAPI.setListening(!listening);
-
     setListening(!listening);
 })
 
@@ -41,6 +40,7 @@ function setListening(l){
     }
     else {
         stopListening();
+        //The function here
     }
 }
 function startListening() {

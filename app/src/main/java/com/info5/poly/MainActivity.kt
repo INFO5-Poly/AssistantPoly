@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -28,6 +29,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     val JS_OBJ_NAME = "AndroidAPI"
     private var speechRecognizer: SpeechRecognizer? = null
+    private var textToSpeech: TextToSpeech? = null
+    private var textToSpeechIsInitialized = false
     private lateinit var speechRecognizerIntent: Intent
     private lateinit var api: WebAPI;
     private val permissionsToAcquire: MutableList<String> = mutableListOf(
@@ -118,6 +121,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         initSpeechRecognition()
+        initSpeechSynthesis()
         api = WebAPI(webView)
     }
 
@@ -160,8 +164,14 @@ class MainActivity : AppCompatActivity() {
                 if (matches != null && matches.size > 0) {
                     val spokenText = matches[0]
                     // Do something with the recognized text
-
                     api.editMessage(spokenText)
+
+                    //The response of Poly
+                    api.addMessage(false)
+                    val polyResponse = "Réponse de Poly"
+                    api.editMessage(polyResponse)
+                    // Use the TextToSpeech object to speak the text
+                    textToSpeech?.speak(polyResponse, TextToSpeech.QUEUE_FLUSH, null, null)
                 }
             }
 
@@ -175,6 +185,24 @@ class MainActivity : AppCompatActivity() {
 
             override fun onEvent(eventType: Int, params: Bundle) {
                 // Called when a recognition event occurs
+            }
+        })
+    }
+
+
+    fun initSpeechSynthesis(){
+        // Initialize the TextToSpeech object
+        textToSpeech = TextToSpeech(this, TextToSpeech.OnInitListener { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = textToSpeech?.setLanguage(Locale.getDefault())
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Language not supported")
+                }
+                else {
+                    Toast.makeText(this, "Text to Speech is initialized", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Log.e("TTS", "Initialization failed")
             }
         })
     }
@@ -201,7 +229,6 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("QueryPermissionsNeeded")
     fun listen_voice() {
         api.addMessage(true)
-
         speechRecognizer?.startListening(speechRecognizerIntent)
 
     }
@@ -225,6 +252,33 @@ class MainActivity : AppCompatActivity() {
         }
         permissionLauncher.launch(permission)
 
+    }
+
+    /*override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            // Set the language for the TextToSpeech object
+            val result = textToSpeech?.setLanguage(Locale.US)
+
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                // The language is not supported
+                Toast.makeText(this, "Language not supported", Toast.LENGTH_SHORT).show()
+            }
+            else {
+                // Use the TextToSpeech object to speak the text
+                // textToSpeech?.speak("enter the text", TextToSpeech.QUEUE_FLUSH, null, null)
+                Toast.makeText(this, "Text to speech is initialized", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            // Initialization failed
+            Toast.makeText(this, "Text-to-speech initialization failed", Toast.LENGTH_SHORT).show()
+        }
+    }*/
+
+    override fun onDestroy() {
+        // Shutdown the TextToSpeech object when the activity is destroyed
+        super.onDestroy()
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
     }
 
 
