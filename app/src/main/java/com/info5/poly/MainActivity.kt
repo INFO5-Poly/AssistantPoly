@@ -11,6 +11,7 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -100,9 +101,16 @@ class MainActivity : AppCompatActivity() {
         fun openYoutubeVideo (searchQuery :String){
             val uri = Uri.parse("https://www.youtube.com/results?search_query=$searchQuery")
             val intent = Intent(Intent.ACTION_VIEW,uri)
-            intent.setPackage(getPackageFromAppName("youtube"))
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            startActivity(intent)
+            if (getPackageFromAppName("youtube") == "") {
+                Toast.makeText(applicationContext, "YouTube app is not installed", Toast.LENGTH_SHORT).show()
+                val chooserIntent = Intent.createChooser(intent, "Choose app to open the link")
+                startActivity(chooserIntent)
+            }else {
+                intent.setPackage(getPackageFromAppName("youtube"))
+                intent.flags =
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                startActivity(intent)
+            }
         }
     }
 
