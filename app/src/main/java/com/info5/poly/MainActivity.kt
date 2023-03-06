@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     val JS_OBJ_NAME = "AndroidAPI"
     private var speechRecognizer: SpeechRecognizer? = null
     private var textToSpeech: TextToSpeech? = null
+    private var isListening: Boolean = false
     private var textToSpeechIsInitialized = false
     private lateinit var speechRecognizerIntent: Intent
     private lateinit var api: WebAPI;
@@ -49,19 +50,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private inner class WebAndroidAPI {
-        private var isListening: Boolean = false
-
         @JavascriptInterface
         fun setListening(listening: Boolean){
             runOnUiThread {
-                if(this.isListening && !listening){
+                /*if(this.isListening && !listening){
                     stop_listening()
                 }
                 else if(!this.isListening && listening){
                     listen_voice()
                 }
 
-                this.isListening = listening
+                this.isListening = listening*/
+                if(!isListening){
+                    listen_voice()
+                }
+                else{
+                    stop_listening()
+                }
             }
         }
     }
@@ -136,6 +141,8 @@ class MainActivity : AppCompatActivity() {
         speechRecognizer!!.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle) {
                 // Called when the recognizer is ready for the user to start speaking
+                isListening = true
+                api.setListening(true)
             }
 
             override fun onBeginningOfSpeech() {
@@ -152,10 +159,15 @@ class MainActivity : AppCompatActivity() {
 
             override fun onEndOfSpeech() {
                 api.setListening(false)
+                isListening = false
             }
 
             override fun onError(error: Int) {
                 // Called when an error occurs
+                Log.e("Recognition erros", "An error is occured during the speech recognition")
+                api.deleteMessage()
+                api.setListening(false)
+                isListening = false
             }
 
             override fun onResults(results: Bundle) {
@@ -168,10 +180,10 @@ class MainActivity : AppCompatActivity() {
 
                     //The response of Poly
                     api.addMessage(false)
-                    val polyResponse = "Réponse de Poly"
+                    val polyResponse = "I am Poly Assistant"
                     api.editMessage(polyResponse)
                     // Use the TextToSpeech object to speak the text
-                    // textToSpeech?.speak(polyResponse, TextToSpeech.QUEUE_FLUSH, null, null)
+                    textToSpeech?.speak(polyResponse, TextToSpeech.QUEUE_FLUSH, null, null)
                 }
             }
 
@@ -235,8 +247,9 @@ class MainActivity : AppCompatActivity() {
 
     fun stop_listening() {
         api.deleteMessage()
+        api.setListening(false)
+        this.isListening = false
         speechRecognizer?.cancel()
-
     }
 
     private fun requestPermissions(){
