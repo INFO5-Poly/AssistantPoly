@@ -1,5 +1,5 @@
-body{
-    background-color: #101015;
+body {
+    background-color: #f1f1f1 !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -7,7 +7,17 @@ body{
     margin: 0;
     padding: 0;
 }
-header{
+
+
+  
+  body.dark-mode {
+    background-color: #101015 !important;
+  }
+
+  
+  
+
+header {
     height: 6vh;
     display: flex;
     flex-direction: row;
@@ -17,29 +27,30 @@ header{
     padding: 1vh;
     line-height: 6vh;
 }
-footer{
+
+footer {
     height: 8vh;
     display: flex;
     flex-direction: row;
-    justify-content:center;
+    justify-content: center;
     background-color: #252530;
-
     line-height: 8vh;
-
 }
-main{
+
+main {
     height: 86vh;
     overflow-y: scroll;
 }
+
 .icon {
     display: inline-block;
     vertical-align: middle;
     line-height: normal;
-    font-size:4vh;
+    font-size: 4vh;
     margin-bottom: 2px;
 }
-#avatar{
-    background-color: #7025c5;
+
+#refresh {
     color: white;
     border-radius: 100%;
     width: 6vh;
@@ -47,15 +58,14 @@ main{
     text-align: center;
 }
 
-#settings-button{
-    color: white;
-    width: 6vh;
-    height: 6vh;
+#options-button, #save-button {
     text-align: center;
+    color:white;
 }
 
-#speak-bubble{
-    position:absolute;
+
+#speak-bubble {
+    position: absolute;
     bottom: 4vh;
     left: auto;
     right: auto;
@@ -68,24 +78,60 @@ main{
     cursor: pointer;
 }
 
-#speak-bubble:hover > .icon{
+#speak-bubble:hover>.icon {
     transform: scale(1.2);
 }
 
 .user-message {
-  background-color: #7D4FFE;
+    background-color: #7D4FFE;
+    align-self: flex-end;
 }
+
 .assistant-message {
-  background-color: #C49FFF;
+    background-color: #C49FFF;
+
 }
 
 .chat-bubble-text {
-  color: white;
+    margin : auto !important;
+    color: black;
 }
+
+.chat-bubble-text.dark-mode {
+    color: white;
+}
+
+
+
 
 .chat-bubble {
     margin-top: 10px;
     margin-bottom: 10px;
     border-radius: 20px;
     padding: 10px;
+    height: auto;
+    width: 65vw;
+    display: block;
+    word-wrap: normal;
 }
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+#speaking-bar {
+    height: 20px;
+    width: 0px;
+    background-color: blue;
+    transition: width 0.5s linear;
+}
+
+p {
+    line-break: anywhere;
+}
+
+
+
