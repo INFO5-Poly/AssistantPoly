@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.AlarmClock
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -111,6 +112,17 @@ class MainActivity : AppCompatActivity() {
                     Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
+        fun setAlarm(hour:Int,minute:Int,message:String){
+
+            val alarmIntent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+                putExtra(AlarmClock.EXTRA_HOUR, hour) // Set the hour to 8am
+                putExtra(AlarmClock.EXTRA_MINUTES, minute) // Set the minute to 30
+                putExtra(AlarmClock.EXTRA_MESSAGE,message) // Set the alarm message
+                putExtra(AlarmClock.EXTRA_SKIP_UI, true) // Skip the alarm app's UI and go straight to saving the alarm
+            }
+            startActivity(alarmIntent)
+
+
         }
     }
 
