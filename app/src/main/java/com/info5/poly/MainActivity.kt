@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.telephony.SmsManager
+import android.provider.AlarmClock
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -98,6 +99,18 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             val smsManager: SmsManager = SmsManager.getDefault()
             smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+        }
+        fun setAlarm(hour:Int,minute:Int,message:String){
+
+            val alarmIntent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+                putExtra(AlarmClock.EXTRA_HOUR, hour) // Set the hour to 8am
+                putExtra(AlarmClock.EXTRA_MINUTES, minute) // Set the minute to 30
+                putExtra(AlarmClock.EXTRA_MESSAGE,message) // Set the alarm message
+                putExtra(AlarmClock.EXTRA_SKIP_UI, true) // Skip the alarm app's UI and go straight to saving the alarm
+            }
+            startActivity(alarmIntent)
+
+
         }
     }
 
