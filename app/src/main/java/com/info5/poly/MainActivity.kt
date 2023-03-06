@@ -171,7 +171,7 @@ class MainActivity : AppCompatActivity() {
                     val polyResponse = "Réponse de Poly"
                     api.editMessage(polyResponse)
                     // Use the TextToSpeech object to speak the text
-                    textToSpeech?.speak(polyResponse, TextToSpeech.QUEUE_FLUSH, null, null)
+                    // textToSpeech?.speak(polyResponse, TextToSpeech.QUEUE_FLUSH, null, null)
                 }
             }
 
