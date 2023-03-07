@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.AlarmClock
 import android.util.Log
@@ -14,8 +15,8 @@ import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.material.internal.ContextUtils.getActivity
 import com.info5.poly.databinding.ActivityMainBinding
+
 
 
 class MainActivity : AppCompatActivity() {
@@ -65,6 +66,41 @@ class MainActivity : AppCompatActivity() {
             }
         }
         @JavascriptInterface
+        fun openApplication(appName:String){
+
+
+                try {
+                    if(getPackageFromAppName(appName) != "") {
+                        val packageName  = getPackageFromAppName(appName)
+                        val i: Intent? = packageManager.getLaunchIntentForPackage(packageName)
+                        if (i != null) {
+                            applicationContext.startActivity(i);
+                        }
+                    }
+                    else{
+                        println("Not found application".plus(appName))
+                    }
+                } catch (e: PackageManager.NameNotFoundException) {
+                    // TODO Auto-generated catch block
+                }
+
+
+        }
+        fun getPackageFromAppName(appName: String): String {
+            val intent = Intent(Intent.ACTION_MAIN, null)
+            intent.addCategory(Intent.CATEGORY_LAUNCHER)
+            val allApps = packageManager.queryIntentActivities(intent, 0)
+            for (resolveInfo in allApps) {
+                val label =
+                    resolveInfo.activityInfo.applicationInfo.loadLabel(packageManager).toString()
+                val packageName = resolveInfo.activityInfo.packageName
+                if (packageName.contains(appName, ignoreCase = true) || appName.contains(label, ignoreCase = true) || label.contains(appName, ignoreCase = true)) {
+                    return packageName
+                }
+            }
+            return ""
+        }
+
         fun setAlarm(hour:Int,minute:Int,message:String){
 
             val alarmIntent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
@@ -78,6 +114,14 @@ class MainActivity : AppCompatActivity() {
 
         }
     }
+
+
+
+
+
+
+
+
 
     private inner class WebAPI(private val webView: WebView) {
         private fun escapeJS(str: String): String{
