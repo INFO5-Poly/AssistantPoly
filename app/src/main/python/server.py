@@ -3,22 +3,22 @@ from flask import Flask, request, jsonify
 import threading
 import time
 from queue import Queue
-import revChatGPT.V1 as gpt
+import revChatGPT.V3 as gpt
 import json
-
+import random
+import string
 
 class GPT_Thread(threading.Thread):
     def __init__(self):
         super().__init__()
         self._stop_event = threading.Event()
         self.request_event = threading.Event()
-        self.request_processed_event = threading.Event()
-        self.request_processed_event.set()
+        self.lock = threading.Lock()
         self.request_data = ""
         self.bot = None
         self.msg = ""
-        self.count = 0
-        self.conv_id = None
+        self.complete = True
+        self.conv_id = self.get_random_string(20)
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -27,10 +27,10 @@ class GPT_Thread(threading.Thread):
         return self._stop_event.is_set()
 
     def _startup(self) -> None:
-        with open('config.json', 'r') as file:
-            self.config = json.loads(file.read())
+        with open('openai.key', 'r') as file:
+            self.config = file.read()
         
-        self.bot = gpt.Chatbot(self.config)
+        self.bot = gpt.Chatbot(api_key=self.config)
 
     def _shutdown(self) -> None:
 
@@ -41,32 +41,40 @@ class GPT_Thread(threading.Thread):
         self.request_event.wait()
         print("handle wait over")
         self.request_event.clear()
-        for r in self.bot.ask(self.request_data, conversation_id = self.conv_id):
-            self.msg = r["message"]
-            self.conv_id = r["conversation_id"]
-            self.count += 1
-            print(self.count, flush=True)
-            
-        self.request_processed_event.set()
+        self.complete = False
+        for r in self.bot.ask_stream(self.request_data, conversation_id = self.conv_id):
+            with self.lock:
+                self.msg += r
+
+        self.complete = True
         print("handle ok")
         
 
     def request(self, request_data):
-        print("request: " + request_data)
-        self.request_processed_event.wait()
-        self.request_processed_event.clear()
-        self.request_data = request_data
-        self.request_event.set()
-        print("request ok")
-    
+        with self.lock:
+            print("request: " + request_data)
+            self.request_data = request_data
+            self.request_event.set()
+            print("request ok")
+        
     def get_response(self):
-        print("get response")
-        return str(self.count) + " : " + self.msg
-
-    def reset_conversation(self):
-        self.bot.reset_chat()
-        self.conv_id = None
+        with self.lock:
+            print("get response")
+            return {
+                    "message": self.msg,
+                    "complete": self.complete
+                }
     
+    def reset_conversation(self):
+        with self.lock:
+            self.bot.reset_chat()
+            self.conv_id = self.get_random_string(20)
+    
+    def get_random_string(self, length):
+        # choose from all lowercase letter
+        letters = string.ascii_lowercase
+        return ''.join(random.choice(letters) for i in range(length))
+
     def run(self) -> None:
         self._startup()
         while not self._stopped():
@@ -86,6 +94,11 @@ def post_message():
     
     r = request.get_json()
     gthread.request(r["message"])
+    return "OK"
+
+@app.post("/reset")
+def post_message():
+    gthread.reset_conversation()
     return "OK"
 
 @app.get("/response")

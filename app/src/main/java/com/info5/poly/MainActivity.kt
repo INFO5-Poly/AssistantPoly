@@ -15,13 +15,19 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.info5.poly.databinding.ActivityMainBinding
+import retrofit2.Call
+import retrofit2.http.GET
+import retrofit2.http.POST
 import java.util.*
+import retrofit2.Retrofit
+
+
+
 
 
 class MainActivity : AppCompatActivity() {
@@ -29,7 +35,9 @@ class MainActivity : AppCompatActivity() {
     val JS_OBJ_NAME = "AndroidAPI"
     private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var speechRecognizerIntent: Intent
-    private lateinit var api: WebAPI;
+    private lateinit var api: WebAPI
+    private lateinit var retrofit:Retrofit
+    private lateinit var  bot: ChatGPTService
     private val permissionsToAcquire: MutableList<String> = mutableListOf(
         Manifest.permission.RECEIVE_SMS,
         Manifest.permission.READ_PHONE_STATE,
@@ -87,6 +95,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    interface ChatGPTService {
+        @POST("message")
+        fun send(message: String): Call<Void>?
+
+        @POST("reset")
+        fun reset(): Call<Void>?
+
+        @GET("response")
+        fun get_response(): Call<String>?
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -120,6 +138,11 @@ class MainActivity : AppCompatActivity() {
         }
         initSpeechRecognition()
         api = WebAPI(webView)
+        retrofit = Retrofit.Builder()
+            .baseUrl("localhost")
+            .build()
+
+        bot = retrofit.create(ChatGPTService::class.java)
     }
 
     fun initSpeechRecognition(){
