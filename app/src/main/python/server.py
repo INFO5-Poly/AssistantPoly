@@ -18,7 +18,9 @@ class GPT_Thread(threading.Thread):
         self.bot = None
         self.msg = ""
         self.complete = True
-        self.conv_id = self.get_random_string(20)
+        self.prompt = ""
+        self.count = 0
+        self.condition = threading.Condition(self.lock)        
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -30,24 +32,33 @@ class GPT_Thread(threading.Thread):
         with open('openai.key', 'r') as file:
             self.config = file.read()
         
+        with open('prompt.txt', 'r') as file:
+            self.prompt = file.read()
+        
         self.bot = gpt.Chatbot(api_key=self.config)
+        request(self.prompt)
 
     def _shutdown(self) -> None:
 
         pass
 
     def _handle(self) -> None:
-        print("handle")
-        self.request_event.wait()
-        print("handle wait over")
-        self.request_event.clear()
-        self.complete = False
-        for r in self.bot.ask_stream(self.request_data, conversation_id = self.conv_id):
-            with self.lock:
-                self.msg += r
+        with self.lock:
+            print("handle")
+            self.request_event.wait()
+            print("handle wait over")
+            self.request_event.clear()
+            
+            self.complete = False
 
-        self.complete = True
-        print("handle ok")
+            self.count += 1
+            for r in self.bot.ask_stream(self.request_data, conversation_id = self.conv_id):
+                self.msg += r
+                self.condition.wait(timeout=0.2)
+
+            self.complete = True
+            self.count += 1
+            print("handle ok")
         
 
     def request(self, request_data):
@@ -67,13 +78,8 @@ class GPT_Thread(threading.Thread):
     
     def reset_conversation(self):
         with self.lock:
-            self.bot.reset_chat()
-            self.conv_id = self.get_random_string(20)
-    
-    def get_random_string(self, length):
-        # choose from all lowercase letter
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(length))
+            if(self.count > 2):
+                self.bot.rollback(self.count - 2)
 
     def run(self) -> None:
         self._startup()

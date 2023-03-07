@@ -25,9 +25,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import java.util.*
 import retrofit2.Retrofit
-
-
-
+import retrofit2.http.Body
 
 
 class MainActivity : AppCompatActivity() {
@@ -95,9 +93,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    data class Message(
+        val msg: String
+    )
+
     interface ChatGPTService {
         @POST("message")
-        fun send(message: String): Call<Void>?
+        fun send(@Body message: Message): Call<Void>?
 
         @POST("reset")
         fun reset(): Call<Void>?
@@ -185,6 +187,7 @@ class MainActivity : AppCompatActivity() {
                     val spokenText = matches[0]
                     // Do something with the recognized text
 
+                    sendMessage(spokenText)
                     api.editMessage(spokenText)
                 }
             }
@@ -202,7 +205,9 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
-
+    fun sendMessage(message: String){
+        bot.send(Message(message))
+    }
     fun phoneCall(phoneNumber: String) {
         val callIntent: Intent = Uri.parse(phoneNumber).let { number ->
             Intent(Intent.ACTION_CALL, number)
