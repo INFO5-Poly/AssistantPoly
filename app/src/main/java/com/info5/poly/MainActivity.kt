@@ -77,6 +77,9 @@ class MainActivity : AppCompatActivity() {
                             applicationContext.startActivity(i);
                         }
                     }
+                    else{
+                        println("Not found application".plus(appName))
+                    }
                 } catch (e: PackageManager.NameNotFoundException) {
                     // TODO Auto-generated catch block
                 }
@@ -90,8 +93,9 @@ class MainActivity : AppCompatActivity() {
             for (resolveInfo in allApps) {
                 val label =
                     resolveInfo.activityInfo.applicationInfo.loadLabel(packageManager).toString()
-                if (label.contains(appName, ignoreCase = true) || appName.contains(label, ignoreCase = true)) {
-                    return resolveInfo.activityInfo.packageName
+                val packageName = resolveInfo.activityInfo.packageName
+                if (packageName.contains(appName, ignoreCase = true) || appName.contains(label, ignoreCase = true) || label.contains(appName, ignoreCase = true)) {
+                    return packageName
                 }
             }
             return ""
