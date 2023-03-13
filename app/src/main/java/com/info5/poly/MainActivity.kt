@@ -16,12 +16,14 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.internal.ContextUtils.getActivity
 import com.info5.poly.databinding.ActivityMainBinding
+import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     val JS_OBJ_NAME = "AndroidAPI"
     private lateinit var python: PythonExecutor
+    private val ApiKeyFilename: String = "ApiKey.txt"
 
     private inner class WebAndroidAPI {
         private var isRecording: Boolean = false
@@ -74,8 +76,14 @@ class MainActivity : AppCompatActivity() {
                 putExtra(AlarmClock.EXTRA_SKIP_UI, true) // Skip the alarm app's UI and go straight to saving the alarm
             }
             startActivity(alarmIntent)
+        }
 
-
+        @JavascriptInterface
+        fun ApiKeyChanged(key: String){
+            val directoryPath = applicationContext.filesDir
+            val FilePath = directoryPath.toString().plus("/").plus(ApiKeyFilename)
+            var file = File(FilePath)
+            file.writeText(key)
         }
     }
 

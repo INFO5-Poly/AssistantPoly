@@ -106,7 +106,6 @@ $(".dropdown-menu li a").click(function () {
     user_theme = selText;
 });
 
-
 document.getElementById("save-button").addEventListener("click", () => {
 
     // document.body.style.backgroundColor=user_theme;
@@ -142,14 +141,8 @@ document.getElementById("save-button").addEventListener("click", () => {
             }
             break;
     }
-
-
-
-
-
-
-
-
+    var ApiKey = $(".input-group input")[0].value;
+    AndroidAPI.ApiKeyChanged(ApiKey);
 })
 
 
