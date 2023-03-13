@@ -19,7 +19,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.info5.poly.databinding.ActivityMainBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -36,6 +40,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var api: WebAPI
     private lateinit var retrofit:Retrofit
     private lateinit var  bot: ChatGPTService
+    private enum class ChatState{
+        IDLE,
+        LISTENING,
+        WAITING,
+    }
+    private var state: ChatState = ChatState.IDLE
     private val permissionsToAcquire: MutableList<String> = mutableListOf(
         Manifest.permission.RECEIVE_SMS,
         Manifest.permission.READ_PHONE_STATE,
@@ -52,19 +62,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private inner class WebAndroidAPI {
-        private var isListening: Boolean = false
+
 
         @JavascriptInterface
         fun setListening(listening: Boolean){
             runOnUiThread {
-                if(this.isListening && !listening){
+                if(this@MainActivity.state == ChatState.LISTENING && !listening){
                     stop_listening()
                 }
-                else if(!this.isListening && listening){
+                else if(this@MainActivity.state == ChatState.IDLE && listening){
                     listen_voice()
                 }
 
-                this.isListening = listening
             }
         }
     }
@@ -96,6 +105,10 @@ class MainActivity : AppCompatActivity() {
     data class Message(
         val msg: String
     )
+    data class Received(
+        val msg: String,
+        val complete: Boolean
+    )
 
     interface ChatGPTService {
         @POST("message")
@@ -105,7 +118,7 @@ class MainActivity : AppCompatActivity() {
         fun reset(): Call<Void>?
 
         @GET("response")
-        fun get_response(): Call<String>?
+        fun getResponse(): Call<Received>?
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -206,7 +219,27 @@ class MainActivity : AppCompatActivity() {
         })
     }
     fun sendMessage(message: String){
+        this.state = ChatState.WAITING
+        var done = false
+        var body: String = ""
+
+        fun getResponse(){
+            var received = bot.getResponse()!!.execute().body()!!
+            done = received.complete
+            body = received.msg
+        }
         bot.send(Message(message))
+        api.addMessage(false)
+        lifecycleScope.launch(Dispatchers.IO) {
+            while(!done){
+                getResponse()
+                api.editMessage(body)
+            }
+            // update UI with the result using the main thread dispatcher
+            withContext(Dispatchers.Main) {
+                this@MainActivity.state = ChatState.IDLE
+            }
+        }
     }
     fun phoneCall(phoneNumber: String) {
         val callIntent: Intent = Uri.parse(phoneNumber).let { number ->
@@ -230,12 +263,13 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("QueryPermissionsNeeded")
     fun listen_voice() {
         api.addMessage(true)
-
+        this.state = ChatState.LISTENING
         speechRecognizer?.startListening(speechRecognizerIntent)
 
     }
 
     fun stop_listening() {
+        this.state = ChatState.IDLE
         api.deleteMessage()
         speechRecognizer?.cancel()
 

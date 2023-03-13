@@ -1,12 +1,12 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 
-url = "http://news.bbc.co.uk/2/hi/health/2284783.stm"
+url = "https://en.wikipedia.org/wiki/Special:Random"
 html = urlopen(url).read()
 soup = BeautifulSoup(html, features="html.parser")
 
 # kill all script and style elements
-for script in soup(["script", "style"]):
+for script in soup(["script", "style", "nav"]):
     script.extract()    # rip it out
 
 # get text

@@ -7,6 +7,9 @@ import revChatGPT.V3 as gpt
 import json
 import random
 import string
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+
 
 class GPT_Thread(threading.Thread):
     def __init__(self):
@@ -87,11 +90,22 @@ class GPT_Thread(threading.Thread):
             self._handle()
         self._shutdown()
 
+    def getSiteContent(url):
+        html = urlopen(url).read()
+        soup = BeautifulSoup(html, features="html.parser")
+
+        # kill all script and style elements
+        for script in soup(["script", "style", "nav"]):
+            script.extract()    # rip it out
+
+        # get text
+        text = soup.get_text()
+        return text.substring(0, text.length.coerceAtMost(3000))
+
+app = Flask(__name__)
 
 gthread = GPT_Thread()
 gthread.start()
-
-app = Flask(__name__)
 
 @app.post("/message")
 def post_message():
@@ -103,7 +117,7 @@ def post_message():
     return "OK"
 
 @app.post("/reset")
-def post_message():
+def reset():
     gthread.reset_conversation()
     return "OK"
 
