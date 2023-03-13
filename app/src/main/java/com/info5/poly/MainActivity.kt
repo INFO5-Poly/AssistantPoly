@@ -11,6 +11,7 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -84,6 +85,14 @@ class MainActivity : AppCompatActivity() {
             val FilePath = directoryPath.toString().plus("/").plus(ApiKeyFilename)
             var file = File(FilePath)
             file.writeText(key)
+        }
+
+        fun readApiKeyFile(path: String): String{
+            val file = File(path)
+            if(file.isFile){
+                return file.readText()
+            }
+            return ""
         }
     }
 
