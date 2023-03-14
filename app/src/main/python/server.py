@@ -39,7 +39,7 @@ class GPT_Thread(threading.Thread):
             self.prompt = file.read()
         
         self.bot = gpt.Chatbot(api_key=self.config)
-        request(self.prompt)
+        self.send_message(self.prompt)
 
     def _shutdown(self) -> None:
 
@@ -55,7 +55,7 @@ class GPT_Thread(threading.Thread):
             self.complete = False
 
             self.count += 1
-            for r in self.bot.ask_stream(self.request_data, conversation_id = self.conv_id):
+            for r in self.bot.ask_stream(self.request_data):
                 self.msg += r
                 self.condition.wait(timeout=0.2)
 
@@ -64,7 +64,7 @@ class GPT_Thread(threading.Thread):
             print("handle ok")
         
 
-    def request(self, request_data):
+    def send_message(self, request_data):
         with self.lock:
             print("request: " + request_data)
             self.request_data = request_data
@@ -104,8 +104,21 @@ class GPT_Thread(threading.Thread):
 
 app = Flask(__name__)
 
-gthread = GPT_Thread()
-gthread.start()
+gthread = None
+
+
+@app.post("/key")
+def set_key():
+    if not request.is_json:
+        return {"error": "Request must be JSON"}, 415
+    
+    r = request.get_json()
+    key = r["key"]
+    if(gthread != None):
+        gthread.stop()
+    gthread = GPT_Thread(key)
+    gthread.run()
+    return "OK"
 
 @app.post("/message")
 def post_message():
