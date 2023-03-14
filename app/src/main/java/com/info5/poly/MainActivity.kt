@@ -11,11 +11,13 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.provider.AlarmClock
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -30,6 +32,7 @@ import retrofit2.http.POST
 import java.util.*
 import retrofit2.Retrofit
 import retrofit2.http.Body
+import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
@@ -39,7 +42,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var speechRecognizerIntent: Intent
     private lateinit var api: WebAPI
     private lateinit var retrofit:Retrofit
-    private lateinit var  bot: ChatGPTService
+    private lateinit var bot: ChatGPTService
+    private lateinit var key: String
     private enum class ChatState{
         IDLE,
         LISTENING,
@@ -53,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.WRITE_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
+    private val apiKeyFilename: String = "openai.key"
 
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()){
         if(it)
@@ -76,8 +81,27 @@ class MainActivity : AppCompatActivity() {
 
             }
         }
+
+        @JavascriptInterface
+        fun apiKeyChanged(key: String){
+            val directoryPath = applicationContext.filesDir
+            val filePath = directoryPath.toString().plus("/").plus(apiKeyFilename)
+            var file = File(filePath)
+            file.writeText(key)
+        }
+
     }
 
+    fun readApiKeyFile(): String{
+        val directoryPath = applicationContext.filesDir
+        val filePath = directoryPath.toString().plus("/").plus(apiKeyFilename)
+        val file = File(filePath)
+        if(file.isFile){
+            return file.readText()
+        }
+        return ""
+    }
+    
     private inner class WebAPI(private val webView: WebView) {
         private fun escapeJS(str: String): String{
             return str
@@ -140,6 +164,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        this.key = readApiKeyFile()
+        
         val webView: WebView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
         webView.addJavascriptInterface(WebAndroidAPI(), JS_OBJ_NAME)
@@ -258,6 +284,16 @@ class MainActivity : AppCompatActivity() {
                 // Define what your app should do if no activity can handle the intent.
             }
         }
+    }
+
+    fun setAlarm(hour:Int,minute:Int,message:String){
+        val alarmIntent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+            putExtra(AlarmClock.EXTRA_HOUR, hour) // Set the hour to 8am
+            putExtra(AlarmClock.EXTRA_MINUTES, minute) // Set the minute to 30
+            putExtra(AlarmClock.EXTRA_MESSAGE,message) // Set the alarm message
+            putExtra(AlarmClock.EXTRA_SKIP_UI, true) // Skip the alarm app's UI and go straight to saving the alarm
+        }
+        startActivity(alarmIntent)
     }
 
     @SuppressLint("QueryPermissionsNeeded")
