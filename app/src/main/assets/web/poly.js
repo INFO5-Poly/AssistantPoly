@@ -1,14 +1,16 @@
 
-var listening = false;
+var state = 0;
 
 var user_theme;
 
 var lastMessage = null;
 
 document.getElementById("speak-bubble").addEventListener("click", () => {
-    AndroidAPI.setListening(!listening);
+    if(state == 0)
+        AndroidAPI.setListening(true);
+    else
+        AndroidAPI.setListening(false);
 
-    setListening(!listening);
 })
 
 function addMessage(isUser) {
@@ -40,29 +42,41 @@ function clear() {
     lastMessage = null
 }
 
-function setListening(l){
-    listening = l;
+function setState(s){
+    state = s;
 
-    if (l) {
-        startListening();
+    if(s == 2){
+        stateWaiting()
+    }
+    else if (s == 1) {
+        stateListening();
     }
     else {
-        stopListening();
+        stopIdle();
     }
 }
-function startListening() {
+function stateListening() {
     const speakingBar = document.getElementById("speaking-bar");
     speakingBar.style.width = "100%";
     document.getElementsByTagName("footer")[0].style.height = "30vh";
     document.getElementById("speak-icon").innerHTML = "close";
+    document.getElementById("myElement").style.pointerEvents = "auto";
 }
 
-function stopListening() {
+function stateIdle() {
     const speakingBar = document.getElementById("speaking-bar");
     speakingBar.style.width = "0%";
     document.getElementsByTagName("footer")[0].style.height = "8vh";
     document.getElementById("speak-icon").innerHTML = "mic";
+    document.getElementById("myElement").style.pointerEvents = "auto";
+}
 
+function stateWaiting() {
+    const speakingBar = document.getElementById("speaking-bar");
+    speakingBar.style.width = "0%";
+    document.getElementsByTagName("footer")[0].style.height = "8vh";
+    document.getElementById("speak-icon").innerHTML = "pending";
+    document.getElementById("myElement").style.pointerEvents = "none";
 }
 
 $(".dropdown-menu li a").click(function () {
@@ -109,6 +123,8 @@ document.getElementById("save-button").addEventListener("click", () => {
     var ApiKey = $(".input-group input")[0].value;
     AndroidAPI.apiKeyChanged(ApiKey);
 })
+
+AndroidAPI.ready();
 
 
 
