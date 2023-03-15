@@ -122,11 +122,17 @@ def set_key():
 @app.post("/message")
 def post_message():
     global gthread
+    print("1")
     if not request.is_json:
         return {"error": "Request must be JSON"}, 415
+    print("2")
     
     r = request.get_json()
+    print("3")
+    
     gthread.send_message(r["message"])
+    print("4")
+    
     return jsonify({"message": "OK"}), 200
 
 @app.post("/reset")

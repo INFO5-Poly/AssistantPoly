@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     data class Message(
-        val msg: String
+        val message: String
     )
     data class Received(
         val msg: String,
@@ -255,9 +255,8 @@ class MainActivity : AppCompatActivity() {
                 if (matches != null && matches.size > 0) {
                     val spokenText = matches[0]
                     // Do something with the recognized text
-
-                    sendMessage(spokenText)
                     api.editMessage(spokenText)
+                    sendMessage(spokenText)
                 }
             }
 
@@ -284,9 +283,9 @@ class MainActivity : AppCompatActivity() {
             done = received.complete
             body = received.msg
         }
-        bot.send(Message(message))
         api.addMessage(false)
         lifecycleScope.launch(Dispatchers.IO) {
+            bot.send(Message(message))!!.execute()
             while(!done){
                 getResponse()
                 api.editMessage(body)
