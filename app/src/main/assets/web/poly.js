@@ -52,7 +52,7 @@ function setState(s){
         stateListening();
     }
     else {
-        stopIdle();
+        stateIdle();
     }
 }
 function stateListening() {
@@ -60,7 +60,7 @@ function stateListening() {
     speakingBar.style.width = "100%";
     document.getElementsByTagName("footer")[0].style.height = "30vh";
     document.getElementById("speak-icon").innerHTML = "close";
-    document.getElementById("myElement").style.pointerEvents = "auto";
+    document.getElementById("speak-icon").style.pointerEvents = "auto";
 }
 
 function stateIdle() {
@@ -68,7 +68,7 @@ function stateIdle() {
     speakingBar.style.width = "0%";
     document.getElementsByTagName("footer")[0].style.height = "8vh";
     document.getElementById("speak-icon").innerHTML = "mic";
-    document.getElementById("myElement").style.pointerEvents = "auto";
+    document.getElementById("speak-icon").style.pointerEvents = "auto";
 }
 
 function stateWaiting() {
@@ -76,7 +76,7 @@ function stateWaiting() {
     speakingBar.style.width = "0%";
     document.getElementsByTagName("footer")[0].style.height = "8vh";
     document.getElementById("speak-icon").innerHTML = "pending";
-    document.getElementById("myElement").style.pointerEvents = "none";
+    document.getElementById("speak-icon").style.pointerEvents = "none";
 }
 
 $(".dropdown-menu li a").click(function () {

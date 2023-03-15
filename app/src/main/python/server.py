@@ -52,6 +52,7 @@ class GPT_Thread(threading.Thread):
         click.echo("handle lock in")
         with self.lock:
             self.complete = False
+            self.msg = ""
             self.count += 1
             for r in self.bot.ask_stream(self.request_data):
                 self.msg += r
@@ -87,8 +88,9 @@ class GPT_Thread(threading.Thread):
     
     def reset_conversation(self):
         with self.lock:
-            if(self.count > 2):
+            if self.count > 2:
                 self.bot.rollback(self.count - 2)
+                self.count = 0
 
     def run(self) -> None:
         self._startup()
