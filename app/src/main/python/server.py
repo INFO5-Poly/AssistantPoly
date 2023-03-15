@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 
 
 class GPT_Thread(threading.Thread):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
         self._stop_event = threading.Event()
         self.request_event = threading.Event()
@@ -23,6 +23,7 @@ class GPT_Thread(threading.Thread):
         self.complete = True
         self.prompt = ""
         self.count = 0
+        self.config = config
         self.condition = threading.Condition(self.lock)        
 
     def stop(self) -> None:
@@ -32,9 +33,6 @@ class GPT_Thread(threading.Thread):
         return self._stop_event.is_set()
 
     def _startup(self) -> None:
-        with open('openai.key', 'r') as file:
-            self.config = file.read()
-        
         with open('prompt.txt', 'r') as file:
             self.prompt = file.read()
         
@@ -117,7 +115,7 @@ def set_key():
     key = r["key"]
     if(gthread != None):
         gthread.stop()
-    gthread = GPT_Thread(key)
+    gthread = GPT_Thread('{"key": "${key}"}')
     gthread.run()
     return "OK"
 
