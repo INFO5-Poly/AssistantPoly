@@ -56,7 +56,7 @@ class GPT_Thread(threading.Thread):
             for r in self.bot.ask_stream(self.request_data):
                 self.msg += r
                 click.echo("handle lock out")
-            self.condition.wait(timeout=0.2)
+                self.condition.wait(timeout=0.2)
             click.echo("handle lock in")
 
             self.complete = True
