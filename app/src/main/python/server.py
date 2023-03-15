@@ -50,10 +50,10 @@ class GPT_Thread(threading.Thread):
         print("handle wait over")
         self.request_event.clear()
         with self.lock:    
-            self.complete = False
 
             self.count += 1
             for r in self.bot.ask_stream(self.request_data):
+                self.complete = False
                 self.msg += r
                 self.condition.wait(timeout=0.2)
 

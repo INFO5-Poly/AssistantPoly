@@ -232,6 +232,7 @@ class MainActivity : AppCompatActivity() {
             while(!done){
                 done = bot.getResponse()!!.execute().body()!!.complete
                 Log.d("RESPONSE-COMPLETE", done.toString())
+                Thread.sleep(200)
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
@@ -321,6 +322,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     api.editMessage(body)
                 }
+                Thread.sleep(200)
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
