@@ -1,14 +1,16 @@
 
-var listening = false;
+var state = 0;
 
 var user_theme;
 
 var lastMessage = null;
 
 document.getElementById("speak-bubble").addEventListener("click", () => {
-    AndroidAPI.setListening(!listening);
+    if(state == 0)
+        AndroidAPI.setListening(true);
+    else
+        AndroidAPI.setListening(false);
 
-    setListening(!listening);
 })
 
 function addMessage(isUser) {
@@ -18,44 +20,63 @@ function addMessage(isUser) {
     else
         template = document.querySelector("template").content.querySelector(".assistant-message");
     lastMessage = template.cloneNode(true);
-    lastMessage.querySelector("p").innerHTML = "🎙️";
+    if(isUser)
+        lastMessage.querySelector("p").innerHTML = "🎙️";
+    else
+        lastMessage.querySelector("p").innerHTML = "...";
     const main = document.querySelector("main");
     main.appendChild(lastMessage);
     document.querySelector("main").scrollTo(0, document.querySelector("main").scrollHeight);
 }
 
 function editMessage(msg){
-    lastMessage.querySelector("p").innerHTML = msg;
+    if(msg != "")
+        lastMessage.querySelector("p").innerHTML = msg;
 }
 
-function deleteMessage(msg){
+function deleteMessage(){
     lastMessage.remove();
 }
+function clear() {
+    document.querySelector("main").innerHTML = ""
+    lastMessage = null
+}
 
+function setState(s){
+    state = s;
 
-function setListening(l){
-    listening = l;
-
-    if (l) {
-        startListening();
+    if(s == 2){
+        stateWaiting()
+    }
+    else if (s == 1) {
+        stateListening();
     }
     else {
-        stopListening();
+        stateIdle();
     }
 }
-function startListening() {
+function stateListening() {
     const speakingBar = document.getElementById("speaking-bar");
     speakingBar.style.width = "100%";
     document.getElementsByTagName("footer")[0].style.height = "30vh";
     document.getElementById("speak-icon").innerHTML = "close";
+    document.getElementById("speak-icon").style.pointerEvents = "auto";
 }
 
-function stopListening() {
+function stateIdle() {
     const speakingBar = document.getElementById("speaking-bar");
     speakingBar.style.width = "0%";
     document.getElementsByTagName("footer")[0].style.height = "8vh";
     document.getElementById("speak-icon").innerHTML = "mic";
+    document.getElementById("speak-icon").style.pointerEvents = "auto";
+}
 
+function stateWaiting() {
+    const speakingBar = document.getElementById("speaking-bar");
+    speakingBar.style.width = "0%";
+    document.getElementsByTagName("footer")[0].style.height = "8vh";
+    document.getElementById("speak-icon").innerHTML = "pending";
+    document.getElementById("speak-icon").style.pointerEvents = "none";
 }
 
 $(".dropdown-menu li a").click(function () {
@@ -102,6 +123,8 @@ document.getElementById("save-button").addEventListener("click", () => {
     var ApiKey = $(".input-group input")[0].value;
     AndroidAPI.apiKeyChanged(ApiKey);
 })
+
+AndroidAPI.ready();
 
 
 

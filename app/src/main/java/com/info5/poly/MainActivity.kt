@@ -31,6 +31,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import java.util.*
 import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import java.io.File
 
@@ -68,6 +69,18 @@ class MainActivity : AppCompatActivity() {
 
     private inner class WebAndroidAPI {
 
+        @JavascriptInterface
+        fun ready(){
+            runOnUiThread {
+                bot = retrofit.create(ChatGPTService::class.java)
+                if (key != "") {
+                    api.setState(2)
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        initBot(key)
+                    }
+                }
+            }
+        }
 
         @JavascriptInterface
         fun setListening(listening: Boolean){
@@ -86,8 +99,14 @@ class MainActivity : AppCompatActivity() {
         fun apiKeyChanged(key: String){
             val directoryPath = applicationContext.filesDir
             val filePath = directoryPath.toString().plus("/").plus(apiKeyFilename)
-            var file = File(filePath)
-            file.writeText(key)
+            api.setState(2)
+            lifecycleScope.launch(Dispatchers.IO) {
+                var file = File(filePath)
+                file.writeText(key)
+                Log.d("API_KEY", key)
+                initBot(key)
+
+            }
         }
 
     }
@@ -121,22 +140,33 @@ class MainActivity : AppCompatActivity() {
             webView.evaluateJavascript("deleteMessage();") {}
         }
 
-        fun setListening(listening: Boolean){
-            webView.evaluateJavascript("setListening(${listening});") {}
+        fun clear(){
+            webView.evaluateJavascript("clear();") {}
+        }
+
+        //0: IDLE;  1: LISTENING;  2: WAITING
+        fun setState(state: Int){
+            webView.evaluateJavascript("setState(${state});") {}
         }
     }
 
     data class Message(
-        val msg: String
+        val message: String
     )
     data class Received(
-        val msg: String,
+        val message: String,
         val complete: Boolean
+    )
+    data class Key(
+        val key: String
     )
 
     interface ChatGPTService {
         @POST("message")
         fun send(@Body message: Message): Call<Void>?
+
+        @POST("key")
+        fun setKey(@Body key: Key): Call<Void>?
 
         @POST("reset")
         fun reset(): Call<Void>?
@@ -153,9 +183,12 @@ class MainActivity : AppCompatActivity() {
 
         // Permissions for audio recording
         if (ContextCompat.checkSelfPermission
-                (applicationContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-        {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                (
+                applicationContext,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val recordAudioRequestCode = 1
                 ActivityCompat.requestPermissions(
                     this@MainActivity, arrayOf(Manifest.permission.RECORD_AUDIO),
@@ -165,14 +198,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         this.key = readApiKeyFile()
-        
+        Log.d("API_KEY", key)
         val webView: WebView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
         webView.addJavascriptInterface(WebAndroidAPI(), JS_OBJ_NAME)
         api = WebAPI(webView)
         webView.loadUrl("file:///android_asset/web/poly.html")
 
-        webView.webChromeClient = object: WebChromeClient() {
+        webView.webChromeClient = object : WebChromeClient() {
             override fun onConsoleMessage(message: String?, lineNumber: Int, sourceID: String?) {
                 Log.d("WebViewConsole", message!!)
             }
@@ -180,12 +213,38 @@ class MainActivity : AppCompatActivity() {
         initSpeechRecognition()
         api = WebAPI(webView)
         retrofit = Retrofit.Builder()
-            .baseUrl("localhost")
+            .baseUrl("http://polyserver.francecentral.cloudapp.azure.com")
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-        bot = retrofit.create(ChatGPTService::class.java)
-    }
 
+    }
+    suspend fun initBot(key: String){
+        try {
+            val response = bot.setKey(Key(key))!!.execute()
+            if (!response.isSuccessful) {
+                Log.d("KEY-RESPONSE", response.errorBody()!!.string())
+            }
+            
+            this@MainActivity.state = ChatState.WAITING
+
+            var done = false
+            while(!done){
+                done = bot.getResponse()!!.execute().body()!!.complete
+                Log.d("RESPONSE-COMPLETE", done.toString())
+                Thread.sleep(200)
+            }
+            // update UI with the result using the main thread dispatcher
+            withContext(Dispatchers.Main) {
+                this@MainActivity.state = ChatState.IDLE
+                api.setState(0)
+                api.clear();
+            }
+
+        } catch (e: Exception) {
+            Log.d("KEY-RESPONSE", e.toString())
+        }
+    }
     fun initSpeechRecognition(){
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -212,7 +271,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onEndOfSpeech() {
-                api.setListening(false)
+                api.setState(0)
             }
 
             override fun onError(error: Int) {
@@ -225,9 +284,8 @@ class MainActivity : AppCompatActivity() {
                 if (matches != null && matches.size > 0) {
                     val spokenText = matches[0]
                     // Do something with the recognized text
-
-                    sendMessage(spokenText)
                     api.editMessage(spokenText)
+                    sendMessage(spokenText)
                 }
             }
 
@@ -246,24 +304,30 @@ class MainActivity : AppCompatActivity() {
     }
     fun sendMessage(message: String){
         this.state = ChatState.WAITING
+        api.setState(2)
         var done = false
         var body: String = ""
 
         fun getResponse(){
             var received = bot.getResponse()!!.execute().body()!!
             done = received.complete
-            body = received.msg
+            body = received.message
         }
-        bot.send(Message(message))
         api.addMessage(false)
         lifecycleScope.launch(Dispatchers.IO) {
+            bot.send(Message(message))!!.execute()
             while(!done){
                 getResponse()
-                api.editMessage(body)
+                Log.d("RESPONSE-COMPLETE", done.toString())
+                withContext(Dispatchers.Main) {
+                    api.editMessage(body)
+                }
+                Thread.sleep(200)
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
                 this@MainActivity.state = ChatState.IDLE
+                api.setState(0)
             }
         }
     }
@@ -299,6 +363,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("QueryPermissionsNeeded")
     fun listen_voice() {
         api.addMessage(true)
+        api.setState(1)
         this.state = ChatState.LISTENING
         speechRecognizer?.startListening(speechRecognizerIntent)
 
@@ -307,6 +372,7 @@ class MainActivity : AppCompatActivity() {
     fun stop_listening() {
         this.state = ChatState.IDLE
         api.deleteMessage()
+        api.setState(0)
         speechRecognizer?.cancel()
 
     }
