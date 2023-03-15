@@ -11,28 +11,6 @@ document.getElementById("speak-bubble").addEventListener("click", () => {
     else
         AndroidAPI.setListening(false);
 
-<<<<<<< HEAD
-=======
-    //AndroidAPI.setRecording(recording);
-   /* if (recording) {
-        stopRecording();
-    }
-    else {
-        startRecording();
-    }
-    addMessage(true, "Hello??????????????????????????????????????????????????????");
-    addMessage(false, "Hello!!!");
-    feeling_count = feeling_count % 3;
-    switch (feeling_count) {
-        case 1: changeUserFeeling("happy"); break;
-        case 2: changeUserFeeling("sad"); break;
-        case 0: changeUserFeeling("neutral"); break;
-    }
-    feeling_count++;*/
-   // AndroidAPI.phoneCall("tel:0767642068");
-    //AndroidAPI.openApplication("youtube");
-   AndroidAPI.openYoutubeVideo ("recette pour faire du pure");
->>>>>>> 02eebf2f70713c9ee1edc0a773d9f70182dabcdb
 })
 
 function addMessage(isUser) {

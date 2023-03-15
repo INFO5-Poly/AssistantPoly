@@ -2,6 +2,7 @@ package com.info5.poly
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,6 +12,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.telephony.SmsManager
 import android.provider.AlarmClock
 import android.util.Log
 import android.webkit.JavascriptInterface
@@ -106,6 +108,8 @@ class MainActivity : AppCompatActivity() {
                 file.writeText(key)
                 Log.d("API_KEY", key)
                 initBot(key)
+            }
+        }
 
     }
 
@@ -120,21 +124,17 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun openApplication(appName:String){
-
-
-            try {
-                if(getPackageFromAppName(appName) != "") {
-                    val packageName  = getPackageFromAppName(appName)
-                    val i: Intent? = packageManager.getLaunchIntentForPackage(packageName)
-                    if (i != null) {
-                        applicationContext.startActivity(i);
-                    }
+        try {
+            if(getPackageFromAppName(appName) != "") {
+                val packageName  = getPackageFromAppName(appName)
+                val i: Intent? = packageManager.getLaunchIntentForPackage(packageName)
+                if (i != null) {
+                    applicationContext.startActivity(i);
                 }
-            } catch (e: PackageManager.NameNotFoundException) {
-                // TODO Auto-generated catch block
             }
-
-
+        } catch (e: PackageManager.NameNotFoundException) {
+            // TODO Auto-generated catch block
+        }
     }
     
     fun getPackageFromAppName(appName: String): String {
@@ -164,8 +164,41 @@ class MainActivity : AppCompatActivity() {
                 Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             startActivity(intent)
         }
+
+    fun sendSMS(phoneNumber:String, message:String){
+        val uri = Uri.parse("smsto:".plus(phoneNumber))
+        val intent = Intent(Intent.ACTION_SENDTO, uri)
+        startActivity(intent)
+        val smsManager: SmsManager = SmsManager.getDefault()
+        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+    }
+
     fun setAlarm(hour:Int,minute:Int,message:String){
 
+        val alarmIntent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+            putExtra(AlarmClock.EXTRA_HOUR, hour) // Set the hour to 8am
+            putExtra(AlarmClock.EXTRA_MINUTES, minute) // Set the minute to 30
+            putExtra(AlarmClock.EXTRA_MESSAGE,message) // Set the alarm message
+            putExtra(AlarmClock.EXTRA_SKIP_UI, true) // Skip the alarm app's UI and go straight to saving the alarm
+        }
+        startActivity(alarmIntent)
+    }
+    fun phoneCall(phoneNumber: String) {
+        val callIntent: Intent = Uri.parse(phoneNumber).let { number ->
+            Intent(Intent.ACTION_CALL, number)
+        }
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            val requestCode = 1
+            ActivityCompat.requestPermissions(
+                this@MainActivity, arrayOf(Manifest.permission.CALL_PHONE),
+                requestCode
+            )
+        } else {
+            try {
+                startActivity(callIntent)
+            } catch (e: ActivityNotFoundException) {
+                // Define what your app should do if no activity can handle the intent.
+            }
         }
     }
 
@@ -379,34 +412,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    fun phoneCall(phoneNumber: String) {
-        val callIntent: Intent = Uri.parse(phoneNumber).let { number ->
-            Intent(Intent.ACTION_CALL, number)
-        }
-        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-            val requestCode = 1
-            ActivityCompat.requestPermissions(
-                this@MainActivity, arrayOf(Manifest.permission.CALL_PHONE),
-                requestCode
-            )
-        } else {
-            try {
-                startActivity(callIntent)
-            } catch (e: ActivityNotFoundException) {
-                // Define what your app should do if no activity can handle the intent.
-            }
-        }
-    }
-
-    fun setAlarm(hour:Int,minute:Int,message:String){
-        val alarmIntent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
-            putExtra(AlarmClock.EXTRA_HOUR, hour) // Set the hour to 8am
-            putExtra(AlarmClock.EXTRA_MINUTES, minute) // Set the minute to 30
-            putExtra(AlarmClock.EXTRA_MESSAGE,message) // Set the alarm message
-            putExtra(AlarmClock.EXTRA_SKIP_UI, true) // Skip the alarm app's UI and go straight to saving the alarm
-        }
-        startActivity(alarmIntent)
-    }
+    
 
     @SuppressLint("QueryPermissionsNeeded")
     fun listen_voice() {
