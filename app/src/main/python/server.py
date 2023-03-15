@@ -102,13 +102,14 @@ class GPT_Thread(threading.Thread):
         text = soup.get_text()
         return text.substring(0, text.length.coerceAtMost(3000))
 
+gthread = None
 app = Flask(__name__)
 
-gthread = None
 
 
 @app.post("/key")
 def set_key():
+    global gthread
     if not request.is_json:
         return {"error": "Request must be JSON"}, 415
     
@@ -122,6 +123,7 @@ def set_key():
 
 @app.post("/message")
 def post_message():
+    global gthread
     if not request.is_json:
         return {"error": "Request must be JSON"}, 415
     
@@ -131,11 +133,13 @@ def post_message():
 
 @app.post("/reset")
 def reset():
+    global gthread
     gthread.reset_conversation()
     return "OK"
 
 @app.get("/response")
 def get_response():
+    global gthread
     return jsonify({"response": gthread.get_response()})
 
 @app.get("/")
