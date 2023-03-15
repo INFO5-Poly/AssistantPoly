@@ -31,6 +31,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import java.util.*
 import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import java.io.File
 
@@ -86,8 +87,13 @@ class MainActivity : AppCompatActivity() {
         fun apiKeyChanged(key: String){
             val directoryPath = applicationContext.filesDir
             val filePath = directoryPath.toString().plus("/").plus(apiKeyFilename)
-            var file = File(filePath)
-            file.writeText(key)
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                var file = File(filePath)
+                file.writeText(key)
+                Log.d("API_KEY", key)
+                bot.setKey(Key(key))!!.execute()
+            }
         }
 
     }
@@ -133,10 +139,16 @@ class MainActivity : AppCompatActivity() {
         val msg: String,
         val complete: Boolean
     )
+    data class Key(
+        val key: String
+    )
 
     interface ChatGPTService {
         @POST("message")
         fun send(@Body message: Message): Call<Void>?
+
+        @POST("key")
+        fun setKey(@Body key: Key): Call<Void>?
 
         @POST("reset")
         fun reset(): Call<Void>?
@@ -153,9 +165,12 @@ class MainActivity : AppCompatActivity() {
 
         // Permissions for audio recording
         if (ContextCompat.checkSelfPermission
-                (applicationContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-        {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                (
+                applicationContext,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val recordAudioRequestCode = 1
                 ActivityCompat.requestPermissions(
                     this@MainActivity, arrayOf(Manifest.permission.RECORD_AUDIO),
@@ -165,14 +180,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         this.key = readApiKeyFile()
-        
+        Log.d("API_KEY", key)
         val webView: WebView = findViewById(R.id.webview)
         webView.settings.javaScriptEnabled = true
         webView.addJavascriptInterface(WebAndroidAPI(), JS_OBJ_NAME)
         api = WebAPI(webView)
         webView.loadUrl("file:///android_asset/web/poly.html")
 
-        webView.webChromeClient = object: WebChromeClient() {
+        webView.webChromeClient = object : WebChromeClient() {
             override fun onConsoleMessage(message: String?, lineNumber: Int, sourceID: String?) {
                 Log.d("WebViewConsole", message!!)
             }
@@ -180,10 +195,16 @@ class MainActivity : AppCompatActivity() {
         initSpeechRecognition()
         api = WebAPI(webView)
         retrofit = Retrofit.Builder()
-            .baseUrl("localhost")
+            .baseUrl("http://polyserver.francecentral.cloudapp.azure.com")
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         bot = retrofit.create(ChatGPTService::class.java)
+        if (key != ""){
+            lifecycleScope.launch(Dispatchers.IO) {
+                bot.setKey(Key(key))!!.execute()
+            }
+        }
     }
 
     fun initSpeechRecognition(){
