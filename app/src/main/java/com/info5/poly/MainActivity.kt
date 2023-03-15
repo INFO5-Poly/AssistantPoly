@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity() {
                 var file = File(filePath)
                 file.writeText(key)
                 Log.d("API_KEY", key)
-                bot.setKey(Key(key))!!.execute()
+                initBot()
             }
         }
 
@@ -125,6 +125,10 @@ class MainActivity : AppCompatActivity() {
 
         fun deleteMessage(){
             webView.evaluateJavascript("deleteMessage();") {}
+        }
+
+        fun clear(){
+            webView.evaluateJavascript("clear();") {}
         }
 
         fun setListening(listening: Boolean){
@@ -201,21 +205,30 @@ class MainActivity : AppCompatActivity() {
 
         bot = retrofit.create(ChatGPTService::class.java)
         if (key != ""){
-            lifecycleScope.launch {
-                withContext(Dispatchers.IO) {
-                    try {
-                        val response = bot.setKey(Key(key))!!.execute()
-                        if (!response.isSuccessful) {
-                            Log.d("KEY-RESPONSE", response.errorBody()!!.string())
-                        }
-                    } catch (e: Exception) {
-                        Log.d("KEY-RESPONSE", e.toString())
-                    }
-                }
+            lifecycleScope.launch(Dispatchers.IO) {
+                initBot(key)
             }
         }
     }
-
+    fun initBot(key: String){
+        try {
+            val response = bot.setKey(Key(key))!!.execute()
+            if (!response.isSuccessful) {
+                Log.d("KEY-RESPONSE", response.errorBody()!!.string())
+            }
+            
+            this@MainActivity.state = State.WAITING
+            while(!done){
+                getResponse()
+            }
+            // update UI with the result using the main thread dispatcher
+            withContext(Dispatchers.Main) {
+                this@MainActivity.state = ChatState.IDLE
+            }
+        } catch (e: Exception) {
+            Log.d("KEY-RESPONSE", e.toString())
+        }
+    }
     fun initSpeechRecognition(){
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)

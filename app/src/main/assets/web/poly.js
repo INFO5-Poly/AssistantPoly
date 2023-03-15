@@ -18,20 +18,27 @@ function addMessage(isUser) {
     else
         template = document.querySelector("template").content.querySelector(".assistant-message");
     lastMessage = template.cloneNode(true);
-    lastMessage.querySelector("p").innerHTML = "🎙️";
+    if(isUser)
+        lastMessage.querySelector("p").innerHTML = "🎙️";
+    else
+        lastMessage.querySelector("p").innerHTML = "...";
     const main = document.querySelector("main");
     main.appendChild(lastMessage);
     document.querySelector("main").scrollTo(0, document.querySelector("main").scrollHeight);
 }
 
 function editMessage(msg){
-    lastMessage.querySelector("p").innerHTML = msg;
+    if(msg != "")
+        lastMessage.querySelector("p").innerHTML = msg;
 }
 
-function deleteMessage(msg){
+function deleteMessage(){
     lastMessage.remove();
 }
-
+function clear() {
+    document.querySelector("main").innerHTML = ""
+    lastMessage = null
+}
 
 function setListening(l){
     listening = l;
