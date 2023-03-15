@@ -44,13 +44,13 @@ class GPT_Thread(threading.Thread):
         pass
 
     def _handle(self) -> None:
+
+        print("handle")
+        self.request_event.wait()
+        print("handle wait over")
+        self.request_event.clear()
         click.echo("handle lock in")
         with self.lock:
-            print("handle")
-            self.request_event.wait()
-            print("handle wait over")
-            self.request_event.clear()
-
             self.complete = False
             self.count += 1
             for r in self.bot.ask_stream(self.request_data):
