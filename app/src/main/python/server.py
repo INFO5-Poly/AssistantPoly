@@ -123,18 +123,13 @@ def set_key():
 @app.post("/message")
 def post_message():
     global gthread
-    click.echo("1")
     if not request.is_json:
         return {"error": "Request must be JSON"}, 415
-    click.echo("2")
-    
+
     r = request.get_json()
-    click.echo("3")
-    
     gthread.send_message(r["message"])
-    click.echo("4")
     
-    return jsonify({"message": "OK"}), 201
+    return jsonify({"message": "OK"}), 200
 
 @app.post("/reset")
 def reset():
@@ -145,7 +140,7 @@ def reset():
 @app.get("/response")
 def get_response():
     global gthread
-    return jsonify({"response": gthread.get_response()}), 200
+    return jsonify(gthread.get_response()), 200
 
 @app.get("/")
 def index():
