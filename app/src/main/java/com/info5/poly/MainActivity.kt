@@ -36,6 +36,7 @@ import retrofit2.http.Body
 import java.io.File
 
 
+
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     val JS_OBJ_NAME = "AndroidAPI"
@@ -106,9 +107,6 @@ class MainActivity : AppCompatActivity() {
                 Log.d("API_KEY", key)
                 initBot(key)
 
-            }
-        }
-
     }
 
     fun readApiKeyFile(): String{
@@ -121,6 +119,56 @@ class MainActivity : AppCompatActivity() {
         return ""
     }
     
+    fun openApplication(appName:String){
+
+
+            try {
+                if(getPackageFromAppName(appName) != "") {
+                    val packageName  = getPackageFromAppName(appName)
+                    val i: Intent? = packageManager.getLaunchIntentForPackage(packageName)
+                    if (i != null) {
+                        applicationContext.startActivity(i);
+                    }
+                }
+            } catch (e: PackageManager.NameNotFoundException) {
+                // TODO Auto-generated catch block
+            }
+
+
+    }
+    
+    fun getPackageFromAppName(appName: String): String {
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        val allApps = packageManager.queryIntentActivities(intent, 0)
+        for (resolveInfo in allApps) {
+            val label =
+                resolveInfo.activityInfo.applicationInfo.loadLabel(packageManager).toString()
+            if (label.contains(appName, ignoreCase = true) || appName.contains(label, ignoreCase = true)) {
+                return resolveInfo.activityInfo.packageName
+            }
+        }
+        return ""
+    }
+    
+    fun openYoutubeVideo (searchQuery :String){
+        val uri = Uri.parse("https://www.youtube.com/results?search_query=$searchQuery")
+        val intent = Intent(Intent.ACTION_VIEW,uri)
+        if (getPackageFromAppName("youtube") == "") {
+            Toast.makeText(applicationContext, "YouTube app is not installed", Toast.LENGTH_SHORT).show()
+            val chooserIntent = Intent.createChooser(intent, "Choose app to open the link")
+            startActivity(chooserIntent)
+        }else {
+            intent.setPackage(getPackageFromAppName("youtube"))
+            intent.flags =
+                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            startActivity(intent)
+        }
+    fun setAlarm(hour:Int,minute:Int,message:String){
+
+        }
+    }
+
     private inner class WebAPI(private val webView: WebView) {
         private fun escapeJS(str: String): String{
             return str
