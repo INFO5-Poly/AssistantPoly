@@ -45,10 +45,10 @@ class GPT_Thread(threading.Thread):
 
     def _handle(self) -> None:
         with self.lock:
-        print("handle")
-        self.request_event.wait()
-        print("handle wait over")
-        self.request_event.clear()
+            print("handle")
+            self.request_event.wait()
+            print("handle wait over")
+            self.request_event.clear()
 
             self.complete = False
             self.count += 1
