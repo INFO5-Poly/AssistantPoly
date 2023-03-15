@@ -137,4 +137,8 @@ def reset():
 def get_response():
     return jsonify({"response": gthread.get_response()})
 
-app.run(debug=True)
+@app.get("/")
+def index():
+    return "OK"
+
+app.run(host="0.0.0.0", port=5000, debug=True)
