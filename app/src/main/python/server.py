@@ -108,21 +108,15 @@ app = Flask(__name__)
 @app.post("/key")
 def set_key():
     global gthread
-    print("1")
     if not request.is_json:
         return {"error": "Request must be JSON"}, 415
-    print("2")
     r = request.get_json()
-    print("3")
     key = r["key"]
-    print("4")
     if(gthread != None):
         gthread.stop()
-    print("5")
     gthread = GPT_Thread(key)
-    print("6")
-    gthread.run()
-    print("7")
+    gthread.start()
+
     return jsonify({"message": "OK"}), 200
 
 @app.post("/message")
