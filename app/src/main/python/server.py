@@ -9,7 +9,7 @@ import random
 import string
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-
+import click
 
 class GPT_Thread(threading.Thread):
     def __init__(self, key):
@@ -121,20 +121,19 @@ def set_key():
 
 @app.post("/message")
 def post_message():
-    print("0")
     global gthread
-    print("1")
+    click.echo("1")
     if not request.is_json:
         return {"error": "Request must be JSON"}, 415
-    print("2")
+    click.echo("2")
     
     r = request.get_json()
-    print("3")
+    click.echo("3")
     
     gthread.send_message(r["message"])
-    print("4")
+    click.echo("4")
     
-    return jsonify({"message": "OK"}), 200
+    return jsonify({"message": "OK"}), 201
 
 @app.post("/reset")
 def reset():
