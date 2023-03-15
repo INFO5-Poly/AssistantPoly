@@ -12,12 +12,9 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-<<<<<<< HEAD
 import android.telephony.SmsManager
 import android.provider.AlarmClock
-=======
 import android.speech.tts.TextToSpeech
->>>>>>> 2150a6cda8203baef5a4280ed7c64dcd7df29592
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -158,19 +155,21 @@ class MainActivity : AppCompatActivity() {
         return ""
     }
     
-    fun openYoutubeVideo (searchQuery :String){
+    fun openYoutubeVideo (searchQuery :String) {
         val uri = Uri.parse("https://www.youtube.com/results?search_query=$searchQuery")
-        val intent = Intent(Intent.ACTION_VIEW,uri)
+        val intent = Intent(Intent.ACTION_VIEW, uri)
         if (getPackageFromAppName("youtube") == "") {
-            Toast.makeText(applicationContext, "YouTube app is not installed", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "YouTube app is not installed", Toast.LENGTH_SHORT)
+                .show()
             val chooserIntent = Intent.createChooser(intent, "Choose app to open the link")
             startActivity(chooserIntent)
-        }else {
+        } else {
             intent.setPackage(getPackageFromAppName("youtube"))
             intent.flags =
                 Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             startActivity(intent)
         }
+    }
 
     fun sendSMS(phoneNumber:String, message:String){
         val uri = Uri.parse("smsto:".plus(phoneNumber))
@@ -344,9 +343,7 @@ class MainActivity : AppCompatActivity() {
 
         speechRecognizer!!.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle) {
-                // Called when the recognizer is ready for the user to start speaking
-                isListening = true
-                api.setListening(true)
+  
             }
 
             override fun onBeginningOfSpeech() {
@@ -369,7 +366,7 @@ class MainActivity : AppCompatActivity() {
                 // Called when an error occurs
                 Log.e("Recognition erros", "An error is occured during the speech recognition")
                 api.deleteMessage()
-                api.setListening(false)
+                api.setState(0)
                 isListening = false
             }
 
@@ -381,9 +378,6 @@ class MainActivity : AppCompatActivity() {
                     // Do something with the recognized text
                     api.editMessage(spokenText)
                     sendMessage(spokenText)
-
-                    // Use the TextToSpeech object to speak the text
-                    textToSpeech?.speak(spokenText, TextToSpeech.QUEUE_FLUSH, null, null)
                 }
             }
 
@@ -425,6 +419,8 @@ class MainActivity : AppCompatActivity() {
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
+                // Use the TextToSpeech object to speak the text
+                textToSpeech?.speak(body, TextToSpeech.QUEUE_FLUSH, null, null)
                 this@MainActivity.state = ChatState.IDLE
                 api.setState(0)
             }
@@ -446,10 +442,13 @@ class MainActivity : AppCompatActivity() {
                 Log.e("TTS", "Initialization failed")
             }
         })
+        textToSpeech?.setSpeechRate(1.5f)
+
     }
 
     @SuppressLint("QueryPermissionsNeeded")
     fun listen_voice() {
+        textToSpeech?.stop()
         api.addMessage(true)
         api.setState(1)
         this.state = ChatState.LISTENING
