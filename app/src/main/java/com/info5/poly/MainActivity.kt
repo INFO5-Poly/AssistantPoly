@@ -201,8 +201,17 @@ class MainActivity : AppCompatActivity() {
 
         bot = retrofit.create(ChatGPTService::class.java)
         if (key != ""){
-            lifecycleScope.launch(Dispatchers.IO) {
-                bot.setKey(Key(key))!!.execute()
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
+                    try {
+                        val response = bot.setKey(Key(key))!!.execute()
+                        if (!response.isSuccessful) {
+                            Log.d("KEY-RESPONSE", response.errorBody()!!.string())
+                        }
+                    } catch (e: Exception) {
+                        Log.d("KEY-RESPONSE", e.toString())
+                    }
+                }
             }
         }
     }
