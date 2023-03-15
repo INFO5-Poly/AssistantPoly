@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 
 
 class GPT_Thread(threading.Thread):
-    def __init__(self, config):
+    def __init__(self, key):
         super().__init__()
         self._stop_event = threading.Event()
         self.request_event = threading.Event()
@@ -23,7 +23,7 @@ class GPT_Thread(threading.Thread):
         self.complete = True
         self.prompt = ""
         self.count = 0
-        self.config = config
+        self.key = key
         self.condition = threading.Condition(self.lock)        
 
     def stop(self) -> None:
@@ -36,7 +36,7 @@ class GPT_Thread(threading.Thread):
         with open('prompt.txt', 'r') as file:
             self.prompt = file.read()
         
-        self.bot = gpt.Chatbot(api_key=self.config)
+        self.bot = gpt.Chatbot(api_key=self.key)
         self.send_message(self.prompt)
 
     def _shutdown(self) -> None:
@@ -115,7 +115,7 @@ def set_key():
     key = r["key"]
     if(gthread != None):
         gthread.stop()
-    gthread = GPT_Thread({"key":  key})
+    gthread = GPT_Thread(key)
     gthread.run()
     return "OK"
 
