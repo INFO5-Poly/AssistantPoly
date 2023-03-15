@@ -74,7 +74,7 @@ class GPT_Thread(threading.Thread):
             print("request ok")
         click.echo("send lock out")
 
-def get_response(self):
+    def get_response(self):
         click.echo("response lock in")
 
         with self.lock:
