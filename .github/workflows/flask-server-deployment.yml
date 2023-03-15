@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "async-python"
+      - "main"
 
 jobs:
   build:
