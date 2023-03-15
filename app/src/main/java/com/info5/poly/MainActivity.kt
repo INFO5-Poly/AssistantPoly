@@ -105,6 +105,7 @@ class MainActivity : AppCompatActivity() {
                 file.writeText(key)
                 Log.d("API_KEY", key)
                 initBot(key)
+
             }
         }
 
@@ -153,7 +154,7 @@ class MainActivity : AppCompatActivity() {
         val message: String
     )
     data class Received(
-        val msg: String,
+        val message: String,
         val complete: Boolean
     )
     data class Key(
@@ -230,12 +231,15 @@ class MainActivity : AppCompatActivity() {
             var done = false
             while(!done){
                 done = bot.getResponse()!!.execute().body()!!.complete
+                Log.d("RESPONSE-COMPLETE", done.toString())
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
                 this@MainActivity.state = ChatState.IDLE
+                api.setState(0)
+                api.clear();
             }
-            api.clear();
+
         } catch (e: Exception) {
             Log.d("KEY-RESPONSE", e.toString())
         }
@@ -306,18 +310,22 @@ class MainActivity : AppCompatActivity() {
         fun getResponse(){
             var received = bot.getResponse()!!.execute().body()!!
             done = received.complete
-            body = received.msg
+            body = received.message
         }
         api.addMessage(false)
         lifecycleScope.launch(Dispatchers.IO) {
             bot.send(Message(message))!!.execute()
             while(!done){
                 getResponse()
-                api.editMessage(body)
+                Log.d("RESPONSE-COMPLETE", done.toString())
+                withContext(Dispatchers.Main) {
+                    api.editMessage(body)
+                }
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
                 this@MainActivity.state = ChatState.IDLE
+                api.setState(0)
             }
         }
     }

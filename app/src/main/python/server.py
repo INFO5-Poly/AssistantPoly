@@ -59,7 +59,7 @@ class GPT_Thread(threading.Thread):
 
             self.complete = True
             self.count += 1
-            print("handle ok")
+            click.echo("handle ok")
         
 
     def send_message(self, request_data):
