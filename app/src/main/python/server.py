@@ -72,6 +72,7 @@ class GPT_Thread(threading.Thread):
     def get_response(self):
         with self.lock:
             click.echo(self.msg)
+            click.echo(self.complete)
             return {
                     "message": self.msg,
                     "complete": self.complete
