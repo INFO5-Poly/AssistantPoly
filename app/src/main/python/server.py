@@ -20,7 +20,7 @@ class GPT_Thread(threading.Thread):
         self.request_data = ""
         self.bot = None
         self.msg = ""
-        self.complete = True
+        self.complete = False
         self.prompt = ""
         self.count = 0
         self.key = key
