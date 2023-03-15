@@ -126,7 +126,7 @@ def post_message():
         return {"error": "Request must be JSON"}, 415
     
     r = request.get_json()
-    gthread.request(r["message"])
+    gthread.send_message(r["message"])
     return "OK"
 
 @app.post("/reset")
