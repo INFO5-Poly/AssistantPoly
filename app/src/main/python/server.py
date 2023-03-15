@@ -121,6 +121,7 @@ def set_key():
 
 @app.post("/message")
 def post_message():
+    print("0")
     global gthread
     print("1")
     if not request.is_json:
