@@ -42,7 +42,6 @@ class GPT_Thread(threading.Thread):
         self.send_message(self.prompt)
 
     def _shutdown(self) -> None:
-
         pass
 
     def _handle(self) -> None:
@@ -115,7 +114,7 @@ def set_key():
     r = request.get_json()
     key = r["key"]
     if(gthread != None):
-        gthread.stop()
+          gthread.stop()
     gthread = GPT_Thread(key)
     gthread.run()
     return "OK"
@@ -126,7 +125,7 @@ def post_message():
         return {"error": "Request must be JSON"}, 415
     
     r = request.get_json()
-    gthread.request(r["message"])
+    gthread.send_message(r["message"])
     return "OK"
 
 @app.post("/reset")
