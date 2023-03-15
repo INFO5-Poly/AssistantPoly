@@ -12,8 +12,12 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+<<<<<<< HEAD
 import android.telephony.SmsManager
 import android.provider.AlarmClock
+=======
+import android.speech.tts.TextToSpeech
+>>>>>>> 2150a6cda8203baef5a4280ed7c64dcd7df29592
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -43,6 +47,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     val JS_OBJ_NAME = "AndroidAPI"
     private var speechRecognizer: SpeechRecognizer? = null
+    private var textToSpeech: TextToSpeech? = null
+    private var isListening: Boolean = false
+    private var textToSpeechIsInitialized = false
     private lateinit var speechRecognizerIntent: Intent
     private lateinit var api: WebAPI
     private lateinit var retrofit:Retrofit
@@ -292,6 +299,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         initSpeechRecognition()
+        initSpeechSynthesis()
         api = WebAPI(webView)
         retrofit = Retrofit.Builder()
             .baseUrl("http://polyserver.francecentral.cloudapp.azure.com")
@@ -337,6 +345,8 @@ class MainActivity : AppCompatActivity() {
         speechRecognizer!!.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle) {
                 // Called when the recognizer is ready for the user to start speaking
+                isListening = true
+                api.setListening(true)
             }
 
             override fun onBeginningOfSpeech() {
@@ -357,6 +367,10 @@ class MainActivity : AppCompatActivity() {
 
             override fun onError(error: Int) {
                 // Called when an error occurs
+                Log.e("Recognition erros", "An error is occured during the speech recognition")
+                api.deleteMessage()
+                api.setListening(false)
+                isListening = false
             }
 
             override fun onResults(results: Bundle) {
@@ -367,6 +381,9 @@ class MainActivity : AppCompatActivity() {
                     // Do something with the recognized text
                     api.editMessage(spokenText)
                     sendMessage(spokenText)
+
+                    // Use the TextToSpeech object to speak the text
+                    textToSpeech?.speak(spokenText, TextToSpeech.QUEUE_FLUSH, null, null)
                 }
             }
 
@@ -383,6 +400,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+    
     fun sendMessage(message: String){
         this.state = ChatState.WAITING
         api.setState(2)
@@ -413,6 +431,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
+    fun initSpeechSynthesis(){
+        // Initialize the TextToSpeech object
+        textToSpeech = TextToSpeech(this, TextToSpeech.OnInitListener { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = textToSpeech?.setLanguage(Locale.getDefault())
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Language not supported")
+                }
+                else {
+                    Toast.makeText(this, "Text to Speech is initialized", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Log.e("TTS", "Initialization failed")
+            }
+        })
+    }
 
     @SuppressLint("QueryPermissionsNeeded")
     fun listen_voice() {
@@ -428,7 +462,6 @@ class MainActivity : AppCompatActivity() {
         api.deleteMessage()
         api.setState(0)
         speechRecognizer?.cancel()
-
     }
 
     private fun requestPermissions(){
@@ -444,6 +477,13 @@ class MainActivity : AppCompatActivity() {
         }
         permissionLauncher.launch(permission)
 
+    }
+
+    override fun onDestroy() {
+        // Shutdown the TextToSpeech object when the activity is destroyed
+        super.onDestroy()
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
     }
 
 
