@@ -115,7 +115,7 @@ def set_key():
     key = r["key"]
     if(gthread != None):
         gthread.stop()
-    gthread = GPT_Thread('{"key": "${key}"}')
+    gthread = GPT_Thread('{"key": "' + key + '"}')
     gthread.run()
     return "OK"
 
