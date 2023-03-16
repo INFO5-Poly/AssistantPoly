@@ -37,7 +37,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import java.io.File
-
+import java.lang.Integer.min
 
 
 class MainActivity : AppCompatActivity() {
@@ -179,9 +179,10 @@ class MainActivity : AppCompatActivity() {
         smsManager.sendTextMessage(phoneNumber, null, message, null, null)
     }
 
-    fun setAlarm(hour:Int,minute:Int,message:String){
+    fun setAlarm(days: Int, hour:Int,minute:Int,message:String){
 
         val alarmIntent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+            putExtra(AlarmClock.EXTRA_DAYS, days)
             putExtra(AlarmClock.EXTRA_HOUR, hour) // Set the hour to 8am
             putExtra(AlarmClock.EXTRA_MINUTES, minute) // Set the minute to 30
             putExtra(AlarmClock.EXTRA_MESSAGE,message) // Set the alarm message
@@ -339,7 +340,6 @@ class MainActivity : AppCompatActivity() {
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak something")
 
         speechRecognizer!!.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle) {
@@ -394,17 +394,95 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
-    
+
+    fun executeCommand(index: Int, command: String){
+        fun extractParameters(input: String): List<String> {
+            val regex = Regex("<([^>]*)>")
+            val matches = regex.findAll(input)
+            return matches.map { it.groupValues[1] }.toList()
+        }
+        fun extractTime(datetime: String): List<Int>{
+            val hours = datetime.substring(0, 2).toInt()
+            val minutes = datetime.substring(3, 5).toInt()
+            return listOf(hours, minutes)
+        }
+        val params = extractParameters(command)
+        runOnUiThread {
+            when(index) {
+                0 -> {
+                    val t = extractTime(params[1])
+                    setAlarm(params[0].toInt(), t[0], t[1], params[2])
+                }
+                1 -> println("soon")
+                2 -> println("soon")
+                3 -> openYoutubeVideo(params[0])
+                4 -> println("soon")
+
+            }
+        }
+    }
+
     fun sendMessage(message: String){
         this.state = ChatState.WAITING
         api.setState(2)
         var done = false
         var body: String = ""
+        var ignoreBuffer = ""
+        var inCommand = false
+        var lastMatch = 0
+        val commands = listOf(
+            "[ ALARM ",
+            "[ CALL ",
+            "[ SMS ",
+            "[ VIDEO ",
+            "[ SEARCH ")
 
+
+        fun matchCommand(text: String): Boolean{
+            for ((index, command) in commands.withIndex()) {
+                if (command.startsWith(text.substring(0, minOf(text.length, command.length)))) {
+                    lastMatch = index
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun processChar(char: Char) {
+            if (inCommand) {
+                ignoreBuffer += char
+                if (char == ']') {
+                    inCommand = false
+                    executeCommand(lastMatch, ignoreBuffer)
+                    ignoreBuffer = ""
+                } else if (!matchCommand(ignoreBuffer)) {
+                    body += ignoreBuffer
+                    ignoreBuffer = ""
+                    inCommand = false
+                }
+
+            } else {
+                if (char == '[') {
+                    inCommand = true
+                    ignoreBuffer += char
+                }  else {
+                    body += char
+                }
+            }
+        }
+        fun removeEmojis(input: String): String {
+            val regex = Regex("[\\p{So}]")
+            return regex.replace(input, "")
+        }
         fun getResponse(){
-            var received = bot.getResponse()!!.execute().body()!!
+            val received = bot.getResponse()!!.execute().body()!!
+            val noEmoji = removeEmojis(received.message)
             done = received.complete
-            body = received.message
+            body = ""
+            ignoreBuffer = ""
+            inCommand = false
+            lastMatch = 0
+            noEmoji.forEach { processChar(it) }
         }
         api.addMessage(false)
         lifecycleScope.launch(Dispatchers.IO) {
@@ -484,6 +562,4 @@ class MainActivity : AppCompatActivity() {
         textToSpeech?.stop()
         textToSpeech?.shutdown()
     }
-
-
 }

@@ -113,7 +113,7 @@ def set_key():
     gthread = GPT_Thread(key)
     gthread.start()
 
-    return jsonify({"message": "OK"}), 200
+    return 200
 
 @app.post("/message")
 def post_message():
@@ -124,13 +124,13 @@ def post_message():
     r = request.get_json()
     gthread.send_message(r["message"])
     
-    return jsonify({"message": "OK"}), 200
+    return 200
 
 @app.post("/reset")
 def reset():
     global gthread
     gthread.reset_conversation()
-    return jsonify({"message": "OK"}), 200
+    return 200
 
 @app.get("/response")
 def get_response():
