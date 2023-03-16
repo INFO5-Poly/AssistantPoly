@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import threading
 import time
 from queue import Queue
@@ -113,7 +113,7 @@ def set_key():
     gthread = GPT_Thread(key)
     gthread.start()
 
-    return 200
+    return ('', 200)
 
 @app.post("/message")
 def post_message():
@@ -123,14 +123,14 @@ def post_message():
 
     r = request.get_json()
     gthread.send_message(r["message"])
-    
-    return 200
+
+    return ('', 200)
 
 @app.post("/reset")
 def reset():
     global gthread
     gthread.reset_conversation()
-    return 200
+    return ('', 200)
 
 @app.get("/response")
 def get_response():
