@@ -313,19 +313,32 @@ class MainActivity : AppCompatActivity() {
     }
     suspend fun initBot(key: String){
         try {
+            Log.d("KEY-DEBUG", "1")
             val response = bot.setKey(Key(key))!!.execute()
+            Log.d("KEY-DEBUG", "2")
             if (!response.isSuccessful) {
                 Log.d("KEY-RESPONSE", response.errorBody()!!.string())
             }
-            
+            Log.d("KEY-DEBUG", "3")
+
             this@MainActivity.state = ChatState.WAITING
 
             var done = false
+
             while(!done){
-                done = bot.getResponse()!!.execute().body()!!.complete
+
+                for (i in 0..5){
+                    try {
+                        done = bot.getResponse()!!.execute().body()!!.complete
+                        break;
+                    }
+                    catch (e: Exception){}
+                }
                 Log.d("RESPONSE-COMPLETE", done.toString())
                 Thread.sleep(200)
             }
+            Log.d("KEY-DEBUG", "4")
+
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
                 this@MainActivity.state = ChatState.IDLE
