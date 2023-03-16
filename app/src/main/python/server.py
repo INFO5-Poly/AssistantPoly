@@ -126,6 +126,7 @@ def set_key():
     gthread = GPT_Thread(key)
     gthread.start()
 
+    click.echo("exit set key")
     return ('', 200)
 
 @app.post("/message")
@@ -136,13 +137,14 @@ def post_message():
 
     r = request.get_json()
     gthread.send_message(r["message"])
-
+    click.echo("exit post message")
     return ('', 200)
 
 @app.post("/reset")
 def reset():
     global gthread
     gthread.reset_conversation()
+    click.echo("exit get response")
     return ('', 200)
 
 @app.get("/response")
@@ -151,7 +153,9 @@ def get_response():
     r = gthread.get_response()
     click.echo("response lock out")
 
-    return jsonify(r), 200
+    jr = jsonify(r)
+    click.echo("exit get response")
+    return jr, 200
 
 @app.get("/")
 def index():
