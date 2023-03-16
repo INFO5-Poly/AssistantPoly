@@ -442,7 +442,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e("TTS", "Initialization failed")
             }
         })
-        textToSpeech?.setSpeechRate(1.5f)
+        textToSpeech?.setSpeechRate(1.3f)
 
     }
 
