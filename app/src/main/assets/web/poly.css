@@ -95,6 +95,9 @@ main {
 .chat-bubble-text {
     margin : auto !important;
     color: black;
+    word-wrap: normal;
+    overflow-wrap: normal;
+
 }
 
 .chat-bubble-text.dark-mode {
@@ -110,9 +113,8 @@ main {
     border-radius: 20px;
     padding: 10px;
     height: auto;
-    width: 65vw;
+    max-width: 65vw;
     display: block;
-    word-wrap: normal;
 }
 
 .chat-container {
