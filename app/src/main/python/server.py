@@ -45,25 +45,35 @@ class GPT_Thread(threading.Thread):
     def _handle(self) -> None:
         self.request_event.wait()
         self.request_event.clear()
+        click.echo("handle lock in")
         with self.lock:
             self.complete = False
             self.msg = ""
             self.count += 1
             for r in self.bot.ask_stream(self.request_data):
                 self.msg += r
+                click.echo("handle lock out cond")
                 self.condition.wait(timeout=0.2)
+                click.echo("handle lock in cond")
 
             self.complete = True
             self.count += 1
+            click.echo("handle lock out")
+
 
 
     def send_message(self, request_data):
+        click.echo("send lock in")
         with self.lock:
             self.request_data = request_data
             self.request_event.set()
 
-    def get_response(self):
+        click.echo("send lock out")
 
+        
+
+    def get_response(self):
+        click.echo("response lock in")
         with self.lock:
             click.echo(self.msg)
             click.echo(self.complete)
@@ -73,10 +83,13 @@ class GPT_Thread(threading.Thread):
                     }
     
     def reset_conversation(self):
+        print("reset lock in")
         with self.lock:
             if self.count > 2:
                 self.bot.rollback(self.count - 2)
                 self.count = 0
+        print("reset lock out")
+        
 
     def run(self) -> None:
         self._startup()
@@ -136,6 +149,8 @@ def reset():
 def get_response():
     global gthread
     r = gthread.get_response()
+    click.echo("response lock out")
+
     return jsonify(r), 200
 
 @app.get("/")

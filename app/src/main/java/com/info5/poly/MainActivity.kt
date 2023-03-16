@@ -475,7 +475,14 @@ class MainActivity : AppCompatActivity() {
             return regex.replace(input, "")
         }
         fun getResponse(){
-            val received = bot.getResponse()!!.execute().body()!!
+            var received = Received("error",true);
+            for (i in 0..5){
+                try {
+                    received = bot.getResponse()!!.execute().body()!!
+                    break;
+                }
+                catch (e: Exception){}
+            }
             val noEmoji = removeEmojis(received.message)
             done = received.complete
             body = ""
@@ -493,7 +500,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     api.editMessage(body)
                 }
-                Thread.sleep(200)
+                Thread.sleep(300)
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
