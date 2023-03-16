@@ -248,16 +248,19 @@ class MainActivity : AppCompatActivity() {
     data class Key(
         val key: String
     )
+    data class SimpleResponse(
+        val msg: String
+    )
 
     interface ChatGPTService {
         @POST("message")
-        fun send(@Body message: Message): Call<Void>?
+        fun send(@Body message: Message): Call<SimpleResponse>?
 
         @POST("key")
-        fun setKey(@Body key: Key): Call<Void>?
+        fun setKey(@Body key: Key): Call<SimpleResponse>?
 
         @POST("reset")
-        fun reset(): Call<Void>?
+        fun reset(): Call<SimpleResponse>?
 
         @GET("response")
         fun getResponse(): Call<Received>?

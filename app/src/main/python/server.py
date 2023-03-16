@@ -127,7 +127,7 @@ def set_key():
     gthread.start()
 
     click.echo("exit set key")
-    return ('', 200)
+    return (jsonify({"msg": "OK"}), 200)
 
 @app.post("/message")
 def post_message():
@@ -138,14 +138,14 @@ def post_message():
     r = request.get_json()
     gthread.send_message(r["message"])
     click.echo("exit post message")
-    return ('', 200)
+    return (jsonify({"msg": "OK"}), 200)
 
 @app.post("/reset")
 def reset():
     global gthread
     gthread.reset_conversation()
     click.echo("exit get response")
-    return ('', 200)
+    return (jsonify({"msg": "OK"}), 200)
 
 @app.get("/response")
 def get_response():
