@@ -10,6 +10,27 @@ import string
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import click
+from googlesearch import search
+
+
+def getSiteContent(url):
+    html = urlopen(url).read()
+    soup = BeautifulSoup(html, features="html.parser")
+
+    # kill all script and style elements
+    for script in soup(["script", "style", "nav"]):
+        script.extract()    # rip it out
+
+    # get text
+    text = soup.get_text()
+    return text.substring(0, text.length.coerceAtMost(3000))
+
+def google_search(query):
+    results = []
+    for url in search(query, num_results=3):
+        results.append(url)
+    return results
+
 
 class GPT_Thread(threading.Thread):
     def __init__(self, key):
@@ -24,7 +45,10 @@ class GPT_Thread(threading.Thread):
         self.prompt = ""
         self.count = 0
         self.key = key
-        self.condition = threading.Condition(self.lock)        
+        self.condition = threading.Condition(self.lock)
+        
+        self.searching = False
+        self.searchQuery = ""
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -73,6 +97,11 @@ class GPT_Thread(threading.Thread):
         
 
     def get_response(self):
+        if self.isSearching():
+            {
+                "message": "searching...",
+                "complete": self.complete
+            }
         click.echo("response lock in")
         with self.lock:
             click.echo(self.msg)
@@ -94,20 +123,47 @@ class GPT_Thread(threading.Thread):
     def run(self) -> None:
         self._startup()
         while not self._stopped():
-            self._handle()
+            if self.isSearching():
+                self.search()
+            else:
+                self._handle()
         self._shutdown()
+    
+    def setSearching(self, query):
+        with self.lock:
+            self.searching = True
+            self.searchQuery = query
+    
+    def search(self):
+        links = google_search(self.searchQuery)
+        responses = []
+        prompt = """System: search results:
+            -------
+            <CONTENT>
+            -------
+            Please write a short summary of the search results that answers the user's query. 
+            """
+        for link in links:
+            content = getSiteContent(link)
+            
+            r = self.bot.ask(prompt.replace("<CONTENT>", content))
+            self.count += 2
+            print("Intermediate result")
+            print(r)
+            responses.append(r)
+            self.bot.rollback(2)
+            self.count -= 2
+        
+        p = prompt.replace("<CONTENT>", "\n\n".join(responses))
+        self.send_message(p)
+            
+        with self.lock:
+            self.searching = False
 
-    def getSiteContent(url):
-        html = urlopen(url).read()
-        soup = BeautifulSoup(html, features="html.parser")
 
-        # kill all script and style elements
-        for script in soup(["script", "style", "nav"]):
-            script.extract()    # rip it out
-
-        # get text
-        text = soup.get_text()
-        return text.substring(0, text.length.coerceAtMost(3000))
+    def isSearching(self):
+        with self.lock:
+            return self.searching
 
 gthread = None
 app = Flask(__name__)
@@ -134,7 +190,10 @@ def post_message():
     global gthread
     if not request.is_json:
         return {"error": "Request must be JSON"}, 415
-
+    
+    if gthread.isSearching():
+        return (jsonify({"msg": "searching"}), 500)
+    
     r = request.get_json()
     gthread.send_message(r["message"])
     click.echo("exit post message")
@@ -143,8 +202,20 @@ def post_message():
 @app.post("/reset")
 def reset():
     global gthread
+    
     gthread.reset_conversation()
     click.echo("exit get response")
+    return (jsonify({"msg": "OK"}), 200)
+
+@app.post("/search")
+def search():
+    global gthread
+    if not request.is_json:
+        return {"error": "Request must be JSON"}, 415
+    
+    r = request.get_json()
+    gthread.setSearching(r["query"])
+    
     return (jsonify({"msg": "OK"}), 200)
 
 @app.get("/response")

@@ -355,6 +355,49 @@ class MainActivity : AppCompatActivity() {
         """.trimIndent()
     }
 
+    fun search(query: String){
+        var done = false
+        var body = ""
+        fun getResponse(){
+            var received = Received("error",true);
+            for (i in 0..5){
+                try {
+                    received = bot.getResponse()!!.execute().body()!!
+                    break;
+                }
+                catch (e: Exception){}
+            }
+            done = received.complete
+            body = received.message
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            withContext(Dispatchers.Main) {
+                this@MainActivity.state = ChatState.WAITING
+                api.setState(2)
+                api.addMessage(false)
+            }
+            bot.search(Message(query))!!.execute()
+            var spokenText = ""
+            while (!done) {
+                getResponse()
+                Log.d("RESPONSE-COMPLETE", done.toString())
+                withContext(Dispatchers.Main) {
+                    api.editMessage(body)
+                }
+
+                spokenText = TTS(body, spokenText)
+                Thread.sleep(300)
+            }
+
+            // update UI with the result using the main thread dispatcher
+            withContext(Dispatchers.Main) {
+                this@MainActivity.state = ChatState.IDLE
+                api.setState(0)
+            }
+        }
+    }
+
     private inner class WebAPI(private val webView: WebView) {
         private fun escapeJS(str: String): String{
             return str
@@ -401,6 +444,9 @@ class MainActivity : AppCompatActivity() {
     interface ChatGPTService {
         @POST("message")
         fun send(@Body message: Message): Call<SimpleResponse>?
+
+        @POST("search")
+        fun search(@Body message: Message): Call<SimpleResponse>?
 
         @POST("key")
         fun setKey(@Body key: Key): Call<SimpleResponse>?
@@ -568,6 +614,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun removeEmojis(input: String): String {
+        val regex = Regex("[\\p{So}]")
+        return regex.replace(input, "¤")
+    }
+
+    suspend fun TTS(body: String, spokenText: String): String{
+        var spoken = spokenText
+        // Get the remaining text that hasn't been spoken yet
+        val remainingText = body.removePrefix(spoken)
+        // Replace all occurrences of "..." with a special separator string
+        val modifiedText = removeEmojis(remainingText.replace("...", "§"))
+
+        val sentences = modifiedText.split("(?<=[§.!?:,¤])".toRegex())
+        // Find the last complete sentence
+        val lastCompleteSentence = sentences.lastOrNull { it.endsWith(".") || it.endsWith("?") || it.endsWith("!") || it.endsWith(":") || it.endsWith("§") || it.endsWith(",") || it.endsWith("¤")}
+        // Speak only the last complete sentence if it hasn't been spoken before
+        if (lastCompleteSentence != null && !spoken.endsWith(lastCompleteSentence)) {
+            lastCompleteSentence.replace("§", "...")
+            withContext(Dispatchers.Main) {
+                Log.d("SPEAK", lastCompleteSentence);
+                // Use the TextToSpeech object to speak the text
+                textToSpeech?.speak(lastCompleteSentence, TextToSpeech.QUEUE_ADD, null, null)
+            }
+            spoken += lastCompleteSentence
+        }
+        return spoken
+    }
     fun sendMessage(message: String){
         this.state = ChatState.WAITING
         api.setState(2)
@@ -620,10 +693,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        fun removeEmojis(input: String): String {
-            val regex = Regex("[\\p{So}]")
-            return regex.replace(input, "")
-        }
+
         fun getResponse(){
             var received = Received("error",true);
             for (i in 0..5){
@@ -651,25 +721,8 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     api.editMessage(body)
                 }
-                // Get the remaining text that hasn't been spoken yet
-                val remainingText = body.removePrefix(spokenText)
-                // Replace all occurrences of "..." with a special separator string
-                val modifiedText = remainingText.replace("...", "§")
 
-                val sentences = modifiedText.split("(?<=[§.!?:,])".toRegex())
-                // Find the last complete sentence
-                val lastCompleteSentence = sentences.lastOrNull { it.endsWith(".") || it.endsWith("?") || it.endsWith("!") || it.endsWith(":") || it.endsWith("§") || it.endsWith(",")}
-                // Speak only the last complete sentence if it hasn't been spoken before
-                if (lastCompleteSentence != null && !spokenText.endsWith(lastCompleteSentence)) {
-                    lastCompleteSentence.replace("§", "...")
-                    withContext(Dispatchers.Main) {
-                        Log.d("SPEAK", lastCompleteSentence);
-                        // Use the TextToSpeech object to speak the text
-                        textToSpeech?.speak(removeEmojis(lastCompleteSentence), TextToSpeech.QUEUE_ADD, null, null)
-                    }
-                    spokenText += lastCompleteSentence
-                }
-
+                spokenText = TTS(body, spokenText)
                 Thread.sleep(300)
             }
             queued.forEach { executeCommand(it.id, it.params) }
