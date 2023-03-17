@@ -4,3 +4,4 @@ googlesearch_python==1.1.0
 requests==2.25.1
 beautifulsoup4==4.9.3
 revChatGPT==4.0.2
+importlib_metadata==6.0.0
