@@ -5,8 +5,12 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -41,6 +45,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import java.io.File
 import java.lang.Integer.min
+import java.text.SimpleDateFormat
 
 
 class MainActivity : AppCompatActivity() {
@@ -62,11 +67,10 @@ class MainActivity : AppCompatActivity() {
     }
     private var state: ChatState = ChatState.IDLE
     private val permissionsToAcquire: MutableList<String> = mutableListOf(
-        Manifest.permission.RECEIVE_SMS,
         Manifest.permission.READ_PHONE_STATE,
         Manifest.permission.SEND_SMS,
-        Manifest.permission.CAMERA,
         Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
     private val apiKeyFilename: String = "openai.key"
@@ -83,6 +87,10 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun ready(){
             runOnUiThread {
+                requestPermissions()
+                initSpeechRecognition()
+                initSpeechSynthesis()
+
                 bot = retrofit.create(ChatGPTService::class.java)
                 if (key != "") {
                     api.setState(2)
@@ -292,6 +300,7 @@ class MainActivity : AppCompatActivity() {
         return numCount >= str.length / 2
     }
 
+    @SuppressLint("Range")
     fun getPhoneNumberFromContacts(name: String): String? {
         val contentResolver: ContentResolver = applicationContext.contentResolver
         val projection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.Contacts.DISPLAY_NAME)
@@ -316,6 +325,34 @@ class MainActivity : AppCompatActivity() {
         }
 
         return null
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getLocation(): String? {
+        val locationManager = applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            ?: return null // return null if location not available
+
+        val geocoder = Geocoder(applicationContext, Locale.getDefault())
+        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+        if (addresses!!.isNotEmpty()) {
+            return "${addresses[0].locality}, ${addresses[0].countryName}"
+        }
+        return null // return null if address not available
+    }
+
+    fun getCurrentDateTime(): String {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val currentDate = Date()
+        return dateFormat.format(currentDate)
+    }
+
+    fun getUserData(): String{
+        return """
+            ---------
+            Datetime: ${getCurrentDateTime()}
+            Location: ${getLocation() ?: "Unknown"}
+        """.trimIndent()
     }
 
     private inner class WebAPI(private val webView: WebView) {
@@ -381,22 +418,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Permissions for audio recording
-        if (ContextCompat.checkSelfPermission
-                (
-                applicationContext,
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val recordAudioRequestCode = 1
-                ActivityCompat.requestPermissions(
-                    this@MainActivity, arrayOf(Manifest.permission.RECORD_AUDIO),
-                    recordAudioRequestCode
-                )
-            }
-        }
-
         this.key = readApiKeyFile()
         Log.d("API_KEY", key)
         val webView: WebView = findViewById(R.id.webview)
@@ -410,16 +431,14 @@ class MainActivity : AppCompatActivity() {
                 Log.d("WebViewConsole", message!!)
             }
         }
-        initSpeechRecognition()
-        initSpeechSynthesis()
+
         api = WebAPI(webView)
         retrofit = Retrofit.Builder()
             .baseUrl("http://polyserver.francecentral.cloudapp.azure.com")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-
-
     }
+
     suspend fun initBot(key: String){
         try {
             Log.d("KEY-DEBUG", "1")
@@ -538,7 +557,7 @@ class MainActivity : AppCompatActivity() {
             when(index) {
                 0 -> {
                     val t = extractTime(params[1])
-                    setAlarm(params[0].toInt(), t[0], t[1], params[2])
+                    setAlarm(params[0].toInt(), t[0], t[1], "Poly alarm")
                 }
                 1 -> phoneCall(params[0])
                 2 -> sendSMS(params[0], params[1])
@@ -624,7 +643,7 @@ class MainActivity : AppCompatActivity() {
         }
         api.addMessage(false)
         lifecycleScope.launch(Dispatchers.IO) {
-            bot.send(Message(message))!!.execute()
+            bot.send(Message(message + getUserData()))!!.execute()
             var spokenText = ""
             while(!done){
                 getResponse()
@@ -696,16 +715,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestPermissions(){
+        Log.d("PERMISSION", "REQUEST")
         if(permissionsToAcquire.isEmpty())
             return
         var permission = permissionsToAcquire[0]
 
         while(ContextCompat.checkSelfPermission(applicationContext, permission) == PackageManager.PERMISSION_GRANTED){
+            Log.d("PERMISSION", "GRANTED")
             permissionsToAcquire.removeAt(0)
             if(permissionsToAcquire.isEmpty())
                 return
             permission = permissionsToAcquire[0]
         }
+        Log.d("PERMISSION", "MISSING")
+        Thread.sleep(500)
         permissionLauncher.launch(permission)
 
     }
