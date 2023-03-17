@@ -103,10 +103,25 @@ class MainActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun reset(){
+            lifecycleScope.launch(Dispatchers.IO) {
+                bot.reset()!!.execute();
+            }
+
+            runOnUiThread {
+                api.clear();
+            }
+        }
+
+        @JavascriptInterface
         fun apiKeyChanged(key: String){
+            if(key == "")
+                return;
             val directoryPath = applicationContext.filesDir
             val filePath = directoryPath.toString().plus("/").plus(apiKeyFilename)
-            api.setState(2)
+            runOnUiThread{
+                api.setState(2)
+            }
             lifecycleScope.launch(Dispatchers.IO) {
                 var file = File(filePath)
                 file.writeText(key)
@@ -499,29 +514,46 @@ class MainActivity : AppCompatActivity() {
                 }
                 catch (e: Exception){}
             }
-            val noEmoji = removeEmojis(received.message)
             done = received.complete
             body = ""
             ignoreBuffer = ""
             inCommand = false
             lastMatch = 0
-            noEmoji.forEach { processChar(it) }
+            received.message.forEach { processChar(it) }
         }
         api.addMessage(false)
         lifecycleScope.launch(Dispatchers.IO) {
             bot.send(Message(message))!!.execute()
+            var spokenText = ""
             while(!done){
                 getResponse()
                 Log.d("RESPONSE-COMPLETE", done.toString())
                 withContext(Dispatchers.Main) {
                     api.editMessage(body)
                 }
+                // Get the remaining text that hasn't been spoken yet
+                val remainingText = body.removePrefix(spokenText)
+                // Replace all occurrences of "..." with a special separator string
+                val modifiedText = remainingText.replace("...", "§")
+
+                val sentences = modifiedText.split("(?<=[§.!?:,])".toRegex())
+                // Find the last complete sentence
+                val lastCompleteSentence = sentences.lastOrNull { it.endsWith(".") || it.endsWith("?") || it.endsWith("!") || it.endsWith(":") || it.endsWith("§") || it.endsWith(",")}
+                // Speak only the last complete sentence if it hasn't been spoken before
+                if (lastCompleteSentence != null && !spokenText.endsWith(lastCompleteSentence)) {
+                    lastCompleteSentence.replace("§", "...")
+                    withContext(Dispatchers.Main) {
+                        Log.d("SPEAK", lastCompleteSentence);
+                        // Use the TextToSpeech object to speak the text
+                        textToSpeech?.speak(removeEmojis(lastCompleteSentence), TextToSpeech.QUEUE_ADD, null, null)
+                    }
+                    spokenText += lastCompleteSentence
+                }
+
                 Thread.sleep(300)
             }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
-                // Use the TextToSpeech object to speak the text
-                textToSpeech?.speak(body, TextToSpeech.QUEUE_FLUSH, null, null)
                 this@MainActivity.state = ChatState.IDLE
                 api.setState(0)
             }
@@ -536,11 +568,8 @@ class MainActivity : AppCompatActivity() {
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                     Log.e("TTS", "Language not supported")
                 }
-                else {
-                    Toast.makeText(this, "Text to Speech is initialized", Toast.LENGTH_SHORT).show()
-                }
             } else {
-                Log.e("TTS", "Initialization failed")
+                Toast.makeText(this, "Text to Speech initialization failed", Toast.LENGTH_SHORT).show()
             }
         })
         textToSpeech?.setSpeechRate(1.3f)

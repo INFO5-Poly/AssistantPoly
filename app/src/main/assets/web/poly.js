@@ -13,6 +13,11 @@ document.getElementById("speak-bubble").addEventListener("click", () => {
 
 })
 
+document.getElementById("refresh").addEventListener("click", () => {
+    AndroidAPI.reset()
+
+})
+
 function addMessage(isUser) {
     var template;
     if (isUser)
@@ -26,12 +31,14 @@ function addMessage(isUser) {
         lastMessage.querySelector("p").innerHTML = "...";
     const main = document.querySelector("main");
     main.appendChild(lastMessage);
-    document.querySelector("main").scrollTo(0, document.querySelector("main").scrollHeight);
+    document.querySelector("main").scrollTop = document.querySelector("main").scrollHeight;
 }
 
 function editMessage(msg){
     if(msg != "")
         lastMessage.querySelector("p").innerHTML = msg;
+
+    document.querySelector("main").scrollTop = document.querySelector("main").scrollHeight;
 }
 
 function deleteMessage(){
