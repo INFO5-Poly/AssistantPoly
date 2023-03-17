@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
         var phoneNumber:String? = contact
-        if(!contact.startsWith("+") && !contact.isDigitsOnly()) {
+        if(!isNumber(contact)) {
             if (ContextCompat.checkSelfPermission(
                     applicationContext,
                     Manifest.permission.READ_CONTACTS
@@ -213,16 +213,21 @@ class MainActivity : AppCompatActivity() {
             phoneNumber = getPhoneNumberFromContacts(contact)
         }
         try {
+            Log.d("SMS", "Phone number found $phoneNumber")
             if (phoneNumber != null) {
                 val uri = Uri.parse("smsto:".plus(phoneNumber))
                 println(uri)
                 val intent = Intent(Intent.ACTION_SENDTO, uri)
                 startActivity(intent)
-                val smsManager: SmsManager = SmsManager.getDefault()
+                val smsManager: SmsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    applicationContext.getSystemService(SmsManager::class.java)
+                } else {
+                    SmsManager.getDefault()
+                }
                 smsManager.sendTextMessage(phoneNumber, null, message, null, null)
             }
         }catch (e: ActivityNotFoundException) {
-            // Define what your app should do if no activity can handle the intent.
+            Log.d("SMS", "no activity")
         }
     }
 
@@ -237,6 +242,7 @@ class MainActivity : AppCompatActivity() {
         }
         startActivity(alarmIntent)
     }
+
     fun phoneCall(contact: String) {
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             val requestCode = 1
@@ -246,8 +252,8 @@ class MainActivity : AppCompatActivity() {
             )
         } else {
             try {
-                if(contact.startsWith("tel:", true)){
-                    val callIntent: Intent = Uri.parse(contact).let { number ->
+                if(isNumber(contact)){
+                    val callIntent: Intent = Uri.parse("tel:$contact").let { number ->
                         Intent(Intent.ACTION_CALL, number)
                     }
                     startActivity(callIntent)
@@ -271,29 +277,44 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    fun isNumber(str: String): Boolean {
+        var numCount = 0
+        var otherCount = 0
+
+        for (c in str) {
+            if (c.isDigit()) {
+                numCount++
+            } else {
+                otherCount++
+            }
+        }
+
+        return numCount >= str.length / 2
+    }
+
     fun getPhoneNumberFromContacts(name: String): String? {
         val contentResolver: ContentResolver = applicationContext.contentResolver
-        val projection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
-        val selection = "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY} = ?"
-
-        val selectionArgs = arrayOf(name)
-
+        val projection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.Contacts.DISPLAY_NAME)
         val cursor = contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             projection,
-            selection,
-            selectionArgs,
+            null,
+            null,
             null
         )
-        if (cursor != null && cursor.moveToFirst()) {
+
+        cursor?.use {
             val index = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            if(index >= 0) {
-                val phoneNumber = cursor.getString(index)
-                cursor.close()
-                return phoneNumber
+            while (cursor.moveToNext()) {
+                val contactName = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))
+                if (contactName.lowercase() == name.lowercase() && index >= 0) {
+                    val phoneNumber = cursor.getString(index)
+                    cursor.close()
+                    return phoneNumber
+                }
             }
-            return null
         }
+
         return null
     }
 
@@ -500,6 +521,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun executeCommand(index: Int, command: String){
+
         fun extractParameters(input: String): List<String> {
             val regex = Regex("<([^>]*)>")
             val matches = regex.findAll(input)
@@ -511,14 +533,15 @@ class MainActivity : AppCompatActivity() {
             return listOf(hours, minutes)
         }
         val params = extractParameters(command)
+        Log.d("EXECUTE", "execute $index: $params");
         runOnUiThread {
             when(index) {
                 0 -> {
                     val t = extractTime(params[1])
                     setAlarm(params[0].toInt(), t[0], t[1], params[2])
                 }
-                1 -> println("soon")
-                2 -> println("soon")
+                1 -> phoneCall(params[0])
+                2 -> sendSMS(params[0], params[1])
                 3 -> openYoutubeVideo(params[0])
                 4 -> println("soon")
 
@@ -540,7 +563,11 @@ class MainActivity : AppCompatActivity() {
             "[ SMS ",
             "[ VIDEO ",
             "[ SEARCH ")
-
+        data class Command(
+            val id: Int,
+            val params: String
+        )
+        var queued: MutableList<Command> = mutableListOf()
 
         fun matchCommand(text: String): Boolean{
             for ((index, command) in commands.withIndex()) {
@@ -557,7 +584,7 @@ class MainActivity : AppCompatActivity() {
                 ignoreBuffer += char
                 if (char == ']') {
                     inCommand = false
-                    executeCommand(lastMatch, ignoreBuffer)
+                    queued.add(Command(lastMatch, ignoreBuffer))
                     ignoreBuffer = ""
                 } else if (!matchCommand(ignoreBuffer)) {
                     body += ignoreBuffer
@@ -592,6 +619,7 @@ class MainActivity : AppCompatActivity() {
             ignoreBuffer = ""
             inCommand = false
             lastMatch = 0
+            queued = mutableListOf()
             received.message.forEach { processChar(it) }
         }
         api.addMessage(false)
@@ -625,6 +653,7 @@ class MainActivity : AppCompatActivity() {
 
                 Thread.sleep(300)
             }
+            queued.forEach { executeCommand(it.id, it.params) }
             // update UI with the result using the main thread dispatcher
             withContext(Dispatchers.Main) {
                 this@MainActivity.state = ChatState.IDLE
