@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ActivityNotFoundException
+import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -14,6 +15,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.telephony.SmsManager
 import android.provider.AlarmClock
+import android.provider.ContactsContract
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.webkit.JavascriptInterface
@@ -24,6 +26,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.lifecycleScope
 import com.info5.poly.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     private val permissionsToAcquire: MutableList<String> = mutableListOf(
         Manifest.permission.RECEIVE_SMS,
         Manifest.permission.READ_PHONE_STATE,
+        Manifest.permission.SEND_SMS,
         Manifest.permission.CAMERA,
         Manifest.permission.WRITE_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_FINE_LOCATION
@@ -129,7 +133,6 @@ class MainActivity : AppCompatActivity() {
                 initBot(key)
             }
         }
-
     }
 
     fun readApiKeyFile(): String{
@@ -186,12 +189,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun sendSMS(phoneNumber:String, message:String){
-        val uri = Uri.parse("smsto:".plus(phoneNumber))
-        val intent = Intent(Intent.ACTION_SENDTO, uri)
-        startActivity(intent)
-        val smsManager: SmsManager = SmsManager.getDefault()
-        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+    fun sendSMS(contact:String, message:String){
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            val requestCode = 1
+            ActivityCompat.requestPermissions(
+                this@MainActivity, arrayOf(Manifest.permission.SEND_SMS),
+                requestCode
+            )
+        }
+        var phoneNumber:String? = contact
+        if(!contact.startsWith("+") && !contact.isDigitsOnly()) {
+            if (ContextCompat.checkSelfPermission(
+                    applicationContext,
+                    Manifest.permission.READ_CONTACTS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                val requestCode = 1
+                ActivityCompat.requestPermissions(
+                    this@MainActivity, arrayOf(Manifest.permission.READ_CONTACTS),
+                    requestCode
+                )
+            }
+            phoneNumber = getPhoneNumberFromContacts(contact)
+        }
+        try {
+            if (phoneNumber != null) {
+                val uri = Uri.parse("smsto:".plus(phoneNumber))
+                println(uri)
+                val intent = Intent(Intent.ACTION_SENDTO, uri)
+                startActivity(intent)
+                val smsManager: SmsManager = SmsManager.getDefault()
+                smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+            }
+        }catch (e: ActivityNotFoundException) {
+            // Define what your app should do if no activity can handle the intent.
+        }
     }
 
     fun setAlarm(days: Int, hour:Int,minute:Int,message:String){
@@ -205,10 +237,7 @@ class MainActivity : AppCompatActivity() {
         }
         startActivity(alarmIntent)
     }
-    fun phoneCall(phoneNumber: String) {
-        val callIntent: Intent = Uri.parse(phoneNumber).let { number ->
-            Intent(Intent.ACTION_CALL, number)
-        }
+    fun phoneCall(contact: String) {
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             val requestCode = 1
             ActivityCompat.requestPermissions(
@@ -217,11 +246,55 @@ class MainActivity : AppCompatActivity() {
             )
         } else {
             try {
-                startActivity(callIntent)
+                if(contact.startsWith("tel:", true)){
+                    val callIntent: Intent = Uri.parse(contact).let { number ->
+                        Intent(Intent.ACTION_CALL, number)
+                    }
+                    startActivity(callIntent)
+                }
+                else{
+                    if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+                        val requestCode = 1
+                        ActivityCompat.requestPermissions(
+                            this@MainActivity, arrayOf(Manifest.permission.READ_CONTACTS),
+                            requestCode
+                        )
+                    }
+                    val phoneNumber = "tel:".plus(getPhoneNumberFromContacts(contact))
+                    val callIntent: Intent = Uri.parse(phoneNumber).let { number ->
+                        Intent(Intent.ACTION_CALL, number)
+                    }
+                    startActivity(callIntent)
+                }
             } catch (e: ActivityNotFoundException) {
                 // Define what your app should do if no activity can handle the intent.
             }
         }
+    }
+    fun getPhoneNumberFromContacts(name: String): String? {
+        val contentResolver: ContentResolver = applicationContext.contentResolver
+        val projection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        val selection = "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY} = ?"
+
+        val selectionArgs = arrayOf(name)
+
+        val cursor = contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )
+        if (cursor != null && cursor.moveToFirst()) {
+            val index = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            if(index >= 0) {
+                val phoneNumber = cursor.getString(index)
+                cursor.close()
+                return phoneNumber
+            }
+            return null
+        }
+        return null
     }
 
     private inner class WebAPI(private val webView: WebView) {
