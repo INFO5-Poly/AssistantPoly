@@ -377,7 +377,7 @@ class MainActivity : AppCompatActivity() {
                 api.setState(2)
                 api.addMessage(false)
             }
-            bot.search(Message(query))!!.execute()
+            bot.search(Query(query))!!.execute()
             var spokenText = ""
             while (!done) {
                 getResponse()
@@ -430,6 +430,9 @@ class MainActivity : AppCompatActivity() {
     data class Message(
         val message: String
     )
+    data class Query(
+        val query: String
+    )
     data class Received(
         val message: String,
         val complete: Boolean
@@ -446,7 +449,7 @@ class MainActivity : AppCompatActivity() {
         fun send(@Body message: Message): Call<SimpleResponse>?
 
         @POST("search")
-        fun search(@Body message: Message): Call<SimpleResponse>?
+        fun search(@Body query: Query): Call<SimpleResponse>?
 
         @POST("key")
         fun setKey(@Body key: Key): Call<SimpleResponse>?
@@ -608,7 +611,7 @@ class MainActivity : AppCompatActivity() {
                 1 -> phoneCall(params[0])
                 2 -> sendSMS(params[0], params[1])
                 3 -> openYoutubeVideo(params[0])
-                4 -> println("soon")
+                4 -> search(params[0])
 
             }
         }
